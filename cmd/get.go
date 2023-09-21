@@ -62,18 +62,24 @@ func init() {
 
 //TODO: fix verb documentation
 //TODO: add parameters (to verb and function)
+
 //TODO: use authentication
+// token := os.Getenv("GITHUB_AUTH_TOKEN")
+// if token == "" {
+// 	log.Fatal("Unauthorized: No token present")
+// }
 
 
 //Get the commenter data
 func getCommenters() {
 	fmt.Println("Fetching comments")
-	comments, err := fetchComments()
+	comments, err := fetchComments("on4kjm", "FLEcli", 1)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
+	//TODO: extract the usefull data in function to slice
 	for i, comment := range comments {
 
 		//TODO: get the YYYY-MM part
@@ -81,9 +87,10 @@ func getCommenters() {
 		//TODO: generate output csv
 		fmt.Printf("%v. %v, %v\n", i+1, *comment.GetUser().Login, comment.GetCreatedAt())
 	}
+	//TODO: write slice to CSV and save it
 }
 
-func fetchComments() ([]*github.PullRequestComment, error) {
+func fetchComments(org string, project string, pr_nbr int) ([]*github.PullRequestComment, error) {
 
 	client := github.NewClient(nil)
 
@@ -93,7 +100,7 @@ func fetchComments() ([]*github.PullRequestComment, error) {
 	}
 
 	for {
-		comments, resp, err := client.PullRequests.ListComments(context.Background(), "on4kjm", "FLEcli", 1, opt)
+		comments, resp, err := client.PullRequests.ListComments(context.Background(), org, project, pr_nbr, opt)
 		if err != nil {
 			return nil, err
 		}
