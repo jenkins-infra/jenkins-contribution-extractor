@@ -63,9 +63,9 @@ func init() {
 //TODO: fix verb documentation
 //TODO: add parameters (to verb and function)
 //TODO: use authentication
-//TODO: format output
-//TODO: get the YYYY-MM part
 
+
+//Get the commenter data
 func getCommenters() {
 	fmt.Println("Fetching comments")
 	comments, err := fetchComments()
@@ -76,6 +76,9 @@ func getCommenters() {
 
 	for i, comment := range comments {
 
+		//TODO: get the YYYY-MM part
+		//TODO: load data in output slice
+		//TODO: generate output csv
 		fmt.Printf("%v. %v, %v\n", i+1, *comment.GetUser().Login, comment.GetCreatedAt())
 	}
 }
