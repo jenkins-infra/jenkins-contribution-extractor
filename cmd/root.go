@@ -27,6 +27,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	// "github.com/google/go-github/v55/github"
 )
 
 var cfgFile string
@@ -34,7 +35,7 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "jenkins-get-commenters",
-	Short: "A brief description of your application",
+	Short: "Retrieve the commenters count from a PR list",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
 

@@ -22,15 +22,17 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/google/go-github/v55/github"
 	"github.com/spf13/cobra"
 )
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "A brief description of your command",
+	Short: "Retrieves the commenter count, given org, project, and PR",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -38,7 +40,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("get called")
+
+		getCommenters()
+
 	},
 }
 
@@ -54,4 +58,48 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+//TODO: fix verb documentation
+//TODO: add parameters (to verb and function)
+//TODO: use authentication
+//TODO: format output
+//TODO: get the YYYY-MM part
+
+func getCommenters() {
+	fmt.Println("Fetching comments")
+	comments, err := fetchComments()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	for i, comment := range comments {
+
+		fmt.Printf("%v. %v, %v\n", i+1, *comment.GetUser().Login, comment.GetCreatedAt())
+	}
+}
+
+func fetchComments() ([]*github.PullRequestComment, error) {
+
+	client := github.NewClient(nil)
+
+	var allComments []*github.PullRequestComment
+	opt := &github.PullRequestListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: 10},
+	}
+
+	for {
+		comments, resp, err := client.PullRequests.ListComments(context.Background(), "on4kjm", "FLEcli", 1, opt)
+		if err != nil {
+			return nil, err
+		}
+		allComments = append(allComments, comments...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	return allComments, nil
 }
