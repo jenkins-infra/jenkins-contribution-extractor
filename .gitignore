@@ -19,3 +19,15 @@
 
 # Go workspace file
 go.work
+
+#vscode settings
+.vscode/
+
+#default test file
+top-submitter*.csv
+
+#Goreleaser output directory
+dist/
+
+#exclude temporary executables
+jenkins-get-commenters
