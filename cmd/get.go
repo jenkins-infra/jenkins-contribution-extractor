@@ -64,13 +64,8 @@ func init() {
 //TODO: fix verb documentation
 //TODO: add parameters (to verb and function)
 
-//TODO: use authentication
-// token := os.Getenv("GITHUB_AUTH_TOKEN")
-// if token == "" {
-// 	log.Fatal("Unauthorized: No token present")
-// }
 
-// Get the requested commenter data, extract it
+// Get the requested commenter data, extract it, and write it to CSV
 func getCommenters() {
 
 	var org string = "on4kjm"
@@ -95,7 +90,11 @@ func getCommenters() {
 // Get the comment data from GitHub.
 func fetchComments(org string, project string, pr_nbr int) ([]*github.PullRequestComment, error) {
 
-	client := github.NewClient(nil)
+	// retrieve the token value from the specified environment variable
+	// ghTokenVar is global and set by the CLI parser
+	ghToken := loadGitHubToken(ghTokenVar)
+
+	client := github.NewClient(nil).WithAuthToken(ghToken)
 
 	var allComments []*github.PullRequestComment
 	opt := &github.PullRequestListCommentsOptions{

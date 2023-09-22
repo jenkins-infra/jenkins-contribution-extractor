@@ -23,10 +23,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"os"
 	// "github.com/google/go-github/v55/github"
 )
 
@@ -40,7 +38,7 @@ var isNoHeader bool
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "jenkins-get-commenters",
-	Short: "Retrieve the commenters count from a PR list",
+	Short: "Retrieve the commenters from a PR list",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
 
@@ -62,8 +60,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	rootCmd.PersistentFlags().StringVarP(&outputFileName, "out", "o", "jenekins_commenters_data.csv", "Output file name.")
 	rootCmd.PersistentFlags().StringVarP(&ghTokenVar, "token_var", "t", "GITHUB_TOKEN", "The environment variable containing the GitHub token.")
 	rootCmd.PersistentFlags().BoolVarP(&isAppend, "append", "a", false, "Appends data to existing output file.")
@@ -75,26 +71,11 @@ func init() {
 
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".jenkins-get-commenters" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".jenkins-get-commenters")
+// Load the GitHub token from the specified environment variable
+func loadGitHubToken(envVariableName string) string {
+	token := os.Getenv(envVariableName)
+	if token == "" {
+		fmt.Println("Unauthorized: No token present")
 	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
+	return token
 }
