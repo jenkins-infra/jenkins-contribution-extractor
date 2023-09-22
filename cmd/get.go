@@ -57,8 +57,8 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
 			return err
 		}
-		if validateErr := validatePRspec(args[0]); validateErr != nil {
-			return  validateErr
+		if _, _, _, validateErr := validatePRspec(args[0]); validateErr != nil {
+			return validateErr
 		}
 		return nil
 	},
@@ -79,17 +79,18 @@ func init() {
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-//TODO: fix verb documentation
 //TODO: add parameters (to verb and function)
 
 // Get the requested commenter data, extract it, and write it to CSV
 func getCommenters(prSpec string) {
 
-	var org string = "on4kjm"
-	var prj string = "FLEcli"
-	var pr int = 1
+	org, prj, pr, err := validatePRspec(prSpec)
+	if err != nil {
+		fmt.Printf("Unexpected error in PR specification (%v)\n Skipping %s\n", err, prSpec)
+		return
+	}
 
-	fmt.Println("Fetching comments")
+	fmt.Printf("Fetching comments for %s\n", prSpec)
 	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -158,28 +159,30 @@ func load_data(org string, prj string, pr_number string, comments []*github.Pull
 
 // validates that the supplied string is a valid PR specification
 // in the form of "org/project/pr_nbr"
-func validatePRspec(prSpec string) error {
+func validatePRspec(prSpec string) (org string, project string, prNbr int, err error) {
 	splittedString := strings.Split(strings.TrimSpace(prSpec), "/")
 
-	if(len(splittedString) != 3) {
-		return fmt.Errorf("Invalid number of elements in prSpec. (expecting 3, found %v)\n",len(splittedString))
+	if len(splittedString) != 3 {
+		return "", "", -1, fmt.Errorf("Invalid number of elements in prSpec. (expecting 3, found %v)\n", len(splittedString))
 	}
 
-	org := splittedString[0]
-	project := splittedString[1]
+	work_Org := splittedString[0]
+	work_Project := splittedString[1]
 	prString := splittedString[2]
-	
-	if(strings.TrimSpace(org) == "") {
-		return fmt.Errorf("Organization element in prSpec is empty\n")
+
+	if strings.TrimSpace(work_Org) == "" {
+		return "", "", -1, fmt.Errorf("Organization element in prSpec is empty\n")
 	}
-	if(strings.TrimSpace(project) == "") {
-		return fmt.Errorf("Project element in prSpec is empty\n")
+	if strings.TrimSpace(work_Project) == "" {
+		return "", "", -1, fmt.Errorf("Project element in prSpec is empty\n")
 	}
-	if(strings.TrimSpace(prString) == "") {
-		return fmt.Errorf("PR element in prSpec is empty\n")
+	if strings.TrimSpace(prString) == "" {
+		return "", "", -1, fmt.Errorf("PR element in prSpec is empty\n")
 	}
-	if _, err := strconv.Atoi(strings.TrimSpace(prString)); err != nil {
-		return fmt.Errorf("PR part of psSpec is not numerical (%v)\n", err)
+
+	work_prNbr, err := strconv.Atoi(strings.TrimSpace(prString))
+	if err != nil {
+		return "", "", -1, fmt.Errorf("PR part of psSpec is not numerical (%v)\n", err)
 	}
-	return nil
+	return work_Org, work_Project, work_prNbr, nil
 }

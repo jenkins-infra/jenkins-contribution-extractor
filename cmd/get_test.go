@@ -25,62 +25,76 @@ import (
 	"testing"
 )
 
-
 func Test_validatePRspec(t *testing.T) {
 	type args struct {
 		prSpec string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name        string
+		args        args
+		wantOrg     string
+		wantProject string
+		wantPrNbr   int
+		wantErr     bool
 	}{
 		{
 			"happy case",
 			args{prSpec: "on4kjm/FLEcli/1"},
-			false,
+			"on4kjm", "FLEcli", 1, false,
 		},
 		{
 			"non numeric PR",
 			args{prSpec: "on4kjm/FLEcli/aa"},
-			true,
+			"", "", -1, true,
 		},
 		{
 			"empty first field",
 			args{prSpec: "/FLEcli/1"},
-			true,
+			"", "", -1, true,
 		},
 		{
 			"empty second field",
 			args{prSpec: "on4kjm//1"},
-			true,
+			"", "", -1, true,
 		},
 		{
 			"empty third field",
 			args{prSpec: "on4kjm/FLEcli/"},
-			true,
+			"", "", -1, true,
 		},
 		{
 			"too short",
 			args{prSpec: "on4kjm/FLEcli"},
-			true,
+			"", "", -1, true,
 		},
 		{
 			"too long",
 			args{prSpec: "on4kjm/FLEcli/1/zzz"},
-			true,
+			"", "", -1, true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validatePRspec(tt.args.prSpec); (err != nil) != tt.wantErr {
+			gotOrg, gotProject, gotPrNbr, err := validatePRspec(tt.args.prSpec)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("validatePRspec() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotOrg != tt.wantOrg {
+				t.Errorf("validatePRspec() gotOrg = %v, want %v", gotOrg, tt.wantOrg)
+			}
+			if gotProject != tt.wantProject {
+				t.Errorf("validatePRspec() gotProject = %v, want %v", gotProject, tt.wantProject)
+			}
+			if gotPrNbr != tt.wantPrNbr {
+				t.Errorf("validatePRspec() gotPrNbr = %v, want %v", gotPrNbr, tt.wantPrNbr)
 			}
 		})
 	}
 }
 
-//FIXME: this should be an integration test: it requires a defined token and a set of global (default) values
+// FIXME: this should be an integration test: it requires a defined token and a set of global (default) values
+// Seems to work with Github actions
 func Test_getCommenters(t *testing.T) {
 	type args struct {
 		prSpec string
