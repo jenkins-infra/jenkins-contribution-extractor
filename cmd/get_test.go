@@ -21,17 +21,82 @@ THE SOFTWARE.
 */
 package cmd
 
-import "testing"
+import (
+	"testing"
+)
 
-func Test_getCommenters(t *testing.T) {
+
+func Test_validatePRspec(t *testing.T) {
+	type args struct {
+		prSpec string
+	}
 	tests := []struct {
-		name string
+		name    string
+		args    args
+		wantErr bool
 	}{
-		{"Simple case"},
+		{
+			"happy case",
+			args{prSpec: "on4kjm/FLEcli/1"},
+			false,
+		},
+		{
+			"non numeric PR",
+			args{prSpec: "on4kjm/FLEcli/aa"},
+			true,
+		},
+		{
+			"empty first field",
+			args{prSpec: "/FLEcli/1"},
+			true,
+		},
+		{
+			"empty second field",
+			args{prSpec: "on4kjm//1"},
+			true,
+		},
+		{
+			"empty third field",
+			args{prSpec: "on4kjm/FLEcli/"},
+			true,
+		},
+		{
+			"too short",
+			args{prSpec: "on4kjm/FLEcli"},
+			true,
+		},
+		{
+			"too long",
+			args{prSpec: "on4kjm/FLEcli/1/zzz"},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getCommenters()
+			if err := validatePRspec(tt.args.prSpec); (err != nil) != tt.wantErr {
+				t.Errorf("validatePRspec() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+//FIXME: this should be an integration test: it requires a defined token and a set of global (default) values
+func Test_getCommenters(t *testing.T) {
+	type args struct {
+		prSpec string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"happy case",
+			args{prSpec: "on4kjm/FLEcli/1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			getCommenters(tt.args.prSpec)
 		})
 	}
 }

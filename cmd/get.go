@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/google/go-github/v55/github"
 	"github.com/spf13/cobra"
@@ -32,17 +33,38 @@ import (
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Retrieves the commenter data, given org, project, and PR",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "get [PR Specification]",
+	Short: "Retrieves the commenter data, given a PR specification",
+	Long: `This command will get from GitHub for a given PR the list of comments
+(author and month). 
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The PR is specified as "organization/project/PR number".
+
+The output is a CVS file, specified with the "-o"/"--out" parameter. If not
+defined it will take the default output filename.
+Each record of the output contains the following information:
+- PR specification
+- Commenter's login name
+- The month the comment was created (YYYY-MM)
+
+The behavior can be controlled with various flags, such as appending to an existing
+output file or overwriting it, header of no-header.
+
+This query requires authenticated API call. The GitHub Token (Personal Access Token) is
+retrieved from an environment variable (default is "GITHUB_TOKEN" but can be overriden with a flag)
+`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+			return err
+		}
+		if validateErr := validatePRspec(args[0]); validateErr != nil {
+			return  validateErr
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		getCommenters()
+		getCommenters(args[0])
 
 	},
 }
@@ -50,10 +72,6 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(getCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
 	// getCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
@@ -64,9 +82,8 @@ func init() {
 //TODO: fix verb documentation
 //TODO: add parameters (to verb and function)
 
-
 // Get the requested commenter data, extract it, and write it to CSV
-func getCommenters() {
+func getCommenters(prSpec string) {
 
 	var org string = "on4kjm"
 	var prj string = "FLEcli"
@@ -137,4 +154,32 @@ func load_data(org string, prj string, pr_number string, comments []*github.Pull
 	}
 
 	return output_slice
+}
+
+// validates that the supplied string is a valid PR specification
+// in the form of "org/project/pr_nbr"
+func validatePRspec(prSpec string) error {
+	splittedString := strings.Split(strings.TrimSpace(prSpec), "/")
+
+	if(len(splittedString) != 3) {
+		return fmt.Errorf("Invalid number of elements in prSpec. (expecting 3, found %v)\n",len(splittedString))
+	}
+
+	org := splittedString[0]
+	project := splittedString[1]
+	prString := splittedString[2]
+	
+	if(strings.TrimSpace(org) == "") {
+		return fmt.Errorf("Organization element in prSpec is empty\n")
+	}
+	if(strings.TrimSpace(project) == "") {
+		return fmt.Errorf("Project element in prSpec is empty\n")
+	}
+	if(strings.TrimSpace(prString) == "") {
+		return fmt.Errorf("PR element in prSpec is empty\n")
+	}
+	if _, err := strconv.Atoi(strings.TrimSpace(prString)); err != nil {
+		return fmt.Errorf("PR part of psSpec is not numerical (%v)\n", err)
+	}
+	return nil
 }

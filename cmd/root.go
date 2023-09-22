@@ -28,7 +28,7 @@ import (
 	// "github.com/google/go-github/v55/github"
 )
 
-var cfgFile string
+// var cfgFile string
 var outputFileName string
 var ghTokenVar string
 var isVerbose bool
