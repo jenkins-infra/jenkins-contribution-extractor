@@ -82,10 +82,6 @@ func init() {
 //TODO: add parameters (to verb and function)
 //TODO: handle secondary quota error
 
-//TODO: catch following error
-// ./jenkins-get-commenters get on4lkjm/FLEcli/1
-// Fetching comments for on4lkjm/FLEcli/1
-// Error: GET https://api.github.com/repos/on4lkjm/FLEcli/pulls/1/comments?per_page=10: 404 Not Found []
 
 // Get the requested commenter data, extract it, and write it to CSV
 func getCommenters(prSpec string) {
@@ -96,20 +92,36 @@ func getCommenters(prSpec string) {
 		return
 	}
 
-	fmt.Printf("Fetching comments for %s\n", prSpec)
+	if isVerbose {
+		fmt.Printf("Fetching comments for %s\n", prSpec)
+	}
 	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		if !isVerbose {
+			fmt.Printf("Fetching comments for %s\n", prSpec)
+		}
+		fmt.Printf("Error: %v\n   Skipping....\n", err)
 		return
 	}
 
-	//TODO: if the list is not empty
-	// Load the collected comment data in the output data structure
-	output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
+	// Only process if data was found
+	nbrOfComments := len(comments)
+	if nbrOfComments > 0 {
 
-	fmt.Printf("%v\n", output_data_list)
+		if isVerbose {
+			fmt.Printf("   Found %d comments.\n", nbrOfComments)
+		}
+		// Load the collected comment data in the output data structure
+		output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 
-	//TODO: write slice to CSV and save it
+		fmt.Printf("%v\n", output_data_list)
+
+		//TODO: write slice to CSV and save it
+	} else {
+		if isVerbose {
+			fmt.Println("   No comments found for PR, skipping...")
+		}
+	}
 }
 
 // Get the comment data from GitHub.
