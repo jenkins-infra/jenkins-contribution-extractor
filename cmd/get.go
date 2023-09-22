@@ -80,6 +80,12 @@ func init() {
 }
 
 //TODO: add parameters (to verb and function)
+//TODO: handle secondary quota error
+
+//TODO: catch following error
+// ./jenkins-get-commenters get on4lkjm/FLEcli/1
+// Fetching comments for on4lkjm/FLEcli/1
+// Error: GET https://api.github.com/repos/on4lkjm/FLEcli/pulls/1/comments?per_page=10: 404 Not Found []
 
 // Get the requested commenter data, extract it, and write it to CSV
 func getCommenters(prSpec string) {
@@ -97,6 +103,7 @@ func getCommenters(prSpec string) {
 		return
 	}
 
+	//TODO: if the list is not empty
 	// Load the collected comment data in the output data structure
 	output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 

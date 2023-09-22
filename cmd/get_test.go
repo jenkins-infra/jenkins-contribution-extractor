@@ -94,7 +94,7 @@ func Test_validatePRspec(t *testing.T) {
 }
 
 // FIXME: this should be an integration test: it requires a defined token and a set of global (default) values
-// Seems to work with Github actions
+// Worked accidentally on GitHub Action
 func Test_getCommenters(t *testing.T) {
 	type args struct {
 		prSpec string
