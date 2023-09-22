@@ -70,8 +70,6 @@ func init() {
 // 	log.Fatal("Unauthorized: No token present")
 // }
 
-
-
 // Get the requested commenter data, extract it
 func getCommenters() {
 
@@ -87,10 +85,9 @@ func getCommenters() {
 	}
 
 	// Load the collected comment data in the output data structure
-	output_data_list := load_data(org,prj,strconv.Itoa(pr), comments)
+	output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 
 	fmt.Printf("%v\n", output_data_list)
-
 
 	//TODO: write slice to CSV and save it
 }
@@ -121,7 +118,7 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 }
 
 // Load the collected comment data in the output data structure
-func load_data(org string, prj string, pr_number string, comments []*github.PullRequestComment) ([][]string){
+func load_data(org string, prj string, pr_number string, comments []*github.PullRequestComment) [][]string {
 	var output_slice [][]string
 	for i, comment := range comments {
 		var output_record []string
@@ -133,9 +130,9 @@ func load_data(org string, prj string, pr_number string, comments []*github.Pull
 		month := timestamp[0:7]
 
 		// create record
-		output_record = append(output_record,pr_ref,commenter,month)
+		output_record = append(output_record, pr_ref, commenter, month)
 
-		fmt.Printf("%v. %s, %s, %s\n",i+1, pr_ref,commenter,month)
+		fmt.Printf("%v. %s, %s, %s\n", i+1, pr_ref, commenter, month)
 		//append the record to the list we are building
 		output_slice = append(output_slice, output_record)
 	}

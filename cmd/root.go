@@ -31,6 +31,11 @@ import (
 )
 
 var cfgFile string
+var outputFileName string
+var ghTokenVar string
+var isVerbose bool
+var isAppend bool
+var isNoHeader bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -59,15 +64,15 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	rootCmd.PersistentFlags().StringVarP(&outputFileName, "out", "o", "jenekins_commenters_data.csv", "Output file name.")
+	rootCmd.PersistentFlags().StringVarP(&ghTokenVar, "token_var", "t", "GITHUB_TOKEN", "The environment variable containing the GitHub token.")
+	rootCmd.PersistentFlags().BoolVarP(&isAppend, "append", "a", false, "Appends data to existing output file.")
+	rootCmd.PersistentFlags().BoolVarP(&isNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
+	rootCmd.PersistentFlags().BoolVarP(&isVerbose, "verbose", "v", false, "Displays useful info during the extraction.")
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jenkins-get-commenters.yaml)")
+	//Disable the Cobra completion options
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
