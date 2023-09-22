@@ -24,6 +24,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/google/go-github/v55/github"
 	"github.com/spf13/cobra"
@@ -32,7 +33,7 @@ import (
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Retrieves the commenter count, given org, project, and PR",
+	Short: "Retrieves the commenter data, given org, project, and PR",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -70,26 +71,31 @@ func init() {
 // }
 
 
-//Get the commenter data
+
+// Get the requested commenter data, extract it
 func getCommenters() {
+
+	var org string = "on4kjm"
+	var prj string = "FLEcli"
+	var pr int = 1
+
 	fmt.Println("Fetching comments")
-	comments, err := fetchComments("on4kjm", "FLEcli", 1)
+	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
-	//TODO: extract the usefull data in function to slice
-	for i, comment := range comments {
+	// Load the collected comment data in the output data structure
+	output_data_list := load_data(org,prj,strconv.Itoa(pr), comments)
 
-		//TODO: get the YYYY-MM part
-		//TODO: load data in output slice
-		//TODO: generate output csv
-		fmt.Printf("%v. %v, %v\n", i+1, *comment.GetUser().Login, comment.GetCreatedAt())
-	}
+	fmt.Printf("%v\n", output_data_list)
+
+
 	//TODO: write slice to CSV and save it
 }
 
+// Get the comment data from GitHub.
 func fetchComments(org string, project string, pr_nbr int) ([]*github.PullRequestComment, error) {
 
 	client := github.NewClient(nil)
@@ -112,4 +118,27 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 	}
 
 	return allComments, nil
+}
+
+// Load the collected comment data in the output data structure
+func load_data(org string, prj string, pr_number string, comments []*github.PullRequestComment) ([][]string){
+	var output_slice [][]string
+	for i, comment := range comments {
+		var output_record []string
+		// "PR_ref","commenter", "month"
+
+		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
+		commenter := *comment.GetUser().Login
+		timestamp := comment.GetCreatedAt().String()
+		month := timestamp[0:7]
+
+		// create record
+		output_record = append(output_record,pr_ref,commenter,month)
+
+		fmt.Printf("%v. %s, %s, %s\n",i+1, pr_ref,commenter,month)
+		//append the record to the list we are building
+		output_slice = append(output_slice, output_record)
+	}
+
+	return output_slice
 }
