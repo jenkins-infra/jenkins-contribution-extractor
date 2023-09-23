@@ -97,7 +97,10 @@ func Test_validatePRspec(t *testing.T) {
 // Worked accidentally on GitHub Action
 func Test_getCommenters(t *testing.T) {
 	type args struct {
-		prSpec string
+		prSpec         string
+		isAppend       bool
+		isNoHeader     bool
+		outputFileName string
 	}
 	tests := []struct {
 		name string
@@ -105,12 +108,17 @@ func Test_getCommenters(t *testing.T) {
 	}{
 		{
 			"happy case",
-			args{prSpec: "on4kjm/FLEcli/1"},
+			args{
+				prSpec: "on4kjm/FLEcli/1",
+				isAppend: false,
+				isNoHeader: false,
+				outputFileName: "jenekins_commenters_data.csv",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getCommenters(tt.args.prSpec)
+			getCommenters(tt.args.prSpec,tt.args.isAppend,tt.args.isNoHeader,tt.args.outputFileName)
 		})
 	}
 }

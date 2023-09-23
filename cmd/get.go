@@ -64,7 +64,7 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		getCommenters(args[0])
+		getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
 
 	},
 }
@@ -82,9 +82,8 @@ func init() {
 //TODO: add parameters (to verb and function)
 //TODO: handle secondary quota error
 
-
 // Get the requested commenter data, extract it, and write it to CSV
-func getCommenters(prSpec string) {
+func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName string) {
 
 	org, prj, pr, err := validatePRspec(prSpec)
 	if err != nil {
@@ -116,6 +115,7 @@ func getCommenters(prSpec string) {
 
 		fmt.Printf("%v\n", output_data_list)
 
+		//TODO: open output
 		//TODO: write slice to CSV and save it
 	} else {
 		if isVerbose {

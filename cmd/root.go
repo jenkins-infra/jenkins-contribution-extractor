@@ -32,8 +32,8 @@ import (
 var outputFileName string
 var ghTokenVar string
 var isVerbose bool
-var isAppend bool
-var isNoHeader bool
+var globalIsAppend bool
+var globalIsNoHeader bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -62,8 +62,8 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&outputFileName, "out", "o", "jenekins_commenters_data.csv", "Output file name.")
 	rootCmd.PersistentFlags().StringVarP(&ghTokenVar, "token_var", "t", "GITHUB_TOKEN", "The environment variable containing the GitHub token.")
-	rootCmd.PersistentFlags().BoolVarP(&isAppend, "append", "a", false, "Appends data to existing output file.")
-	rootCmd.PersistentFlags().BoolVarP(&isNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
+	rootCmd.PersistentFlags().BoolVarP(&globalIsAppend, "append", "a", false, "Appends data to existing output file.")
+	rootCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
 	rootCmd.PersistentFlags().BoolVarP(&isVerbose, "verbose", "v", false, "Displays useful info during the extraction.")
 
 	//Disable the Cobra completion options
