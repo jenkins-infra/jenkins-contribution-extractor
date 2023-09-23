@@ -24,7 +24,7 @@ go.work
 .vscode/
 
 #default test file
-top-submitter*.csv
+jenkins_commenters_data.csv
 
 #Goreleaser output directory
 dist/

@@ -23,7 +23,10 @@ package cmd
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -113,10 +116,22 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		// Load the collected comment data in the output data structure
 		output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 
-		fmt.Printf("%v\n", output_data_list)
+		// fmt.Printf("%v\n", output_data_list)
+		if isVerbose {
+			isAppendString := "(appending"
+			if isAppend {
+				isAppendString = "(overwriting"
+			}
 
-		//TODO: open output
-		//TODO: write slice to CSV and save it
+			isNoHeaderString := "with"
+			if isNoHeader {
+				isNoHeaderString = "without"
+			}
+
+			fmt.Printf("Writing data to \"%s\" %s %s header)\n", outputFileName, isAppendString, isNoHeaderString)
+		}
+
+		writeCSVtoFile(outputFileName, isAppend, isNoHeader, output_data_list)
 	} else {
 		if isVerbose {
 			fmt.Println("   No comments found for PR, skipping...")
@@ -153,12 +168,14 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 	return allComments, nil
 }
 
+var csvHeader = []string{"PR_ref", "commenter", "month"}
+
 // Load the collected comment data in the output data structure
+// TODO: create a test
 func load_data(org string, prj string, pr_number string, comments []*github.PullRequestComment) [][]string {
 	var output_slice [][]string
-	for i, comment := range comments {
+	for _, comment := range comments {
 		var output_record []string
-		// "PR_ref","commenter", "month"
 
 		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
 		commenter := *comment.GetUser().Login
@@ -168,7 +185,6 @@ func load_data(org string, prj string, pr_number string, comments []*github.Pull
 		// create record
 		output_record = append(output_record, pr_ref, commenter, month)
 
-		fmt.Printf("%v. %s, %s, %s\n", i+1, pr_ref, commenter, month)
 		//append the record to the list we are building
 		output_slice = append(output_slice, output_record)
 	}
@@ -204,4 +220,33 @@ func validatePRspec(prSpec string) (org string, project string, prNbr int, err e
 		return "", "", -1, fmt.Errorf("PR part of psSpec is not numerical (%v)\n", err)
 	}
 	return work_Org, work_Project, work_prNbr, nil
+}
+
+// Write the string slice to a file formatted as a CSV
+func writeCSVtoFile(outputFileName string, isAppend bool, isNoHeader bool, csv_output_slice [][]string) {
+	//TODO: to append or not to append, that is the question
+
+	//Open output file
+	out, err := os.Create(outputFileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
+
+	//create a csv writer
+	csv_out := csv.NewWriter(out)
+
+	if !isNoHeader {
+		headerWriteError := csv_out.Write(csvHeader)
+		if headerWriteError != nil {
+			log.Fatal(headerWriteError)
+		}
+		csv_out.Flush()
+	}
+
+	write_err := csv_out.WriteAll(csv_output_slice)
+	if write_err != nil {
+		log.Fatal(write_err)
+	}
+	csv_out.Flush()
 }

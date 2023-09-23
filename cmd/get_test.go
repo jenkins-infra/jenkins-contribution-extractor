@@ -109,16 +109,16 @@ func Test_getCommenters(t *testing.T) {
 		{
 			"happy case",
 			args{
-				prSpec: "on4kjm/FLEcli/1",
-				isAppend: false,
-				isNoHeader: false,
+				prSpec:         "on4kjm/FLEcli/1",
+				isAppend:       false,
+				isNoHeader:     false,
 				outputFileName: "jenekins_commenters_data.csv",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getCommenters(tt.args.prSpec,tt.args.isAppend,tt.args.isNoHeader,tt.args.outputFileName)
+			getCommenters(tt.args.prSpec, tt.args.isAppend, tt.args.isNoHeader, tt.args.outputFileName)
 		})
 	}
 }
