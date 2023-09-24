@@ -112,7 +112,16 @@ func Test_getCommenters(t *testing.T) {
 				prSpec:         "on4kjm/FLEcli/1",
 				isAppend:       false,
 				isNoHeader:     false,
-				outputFileName: "jenekins_commenters_data.csv",
+				outputFileName: "jenkins_commenters_data.csv",
+			},
+		},
+		{
+			"happy case - append",
+			args{
+				prSpec:         "on4kjm/FLEcli/1",
+				isAppend:       true,
+				isNoHeader:     false,
+				outputFileName: "jenkins_commenters_data.csv",
 			},
 		},
 	}

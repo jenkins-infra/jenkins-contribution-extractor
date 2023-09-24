@@ -116,22 +116,11 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		// Load the collected comment data in the output data structure
 		output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 
-		// fmt.Printf("%v\n", output_data_list)
-		if isVerbose {
-			isAppendString := "(appending"
-			if isAppend {
-				isAppendString = "(overwriting"
-			}
+		// Creates, overwrites, or opens for append depending on the combination
+		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
+		defer out.Close()
 
-			isNoHeaderString := "with"
-			if isNoHeader {
-				isNoHeaderString = "without"
-			}
-
-			fmt.Printf("Writing data to \"%s\" %s %s header)\n", outputFileName, isAppendString, isNoHeaderString)
-		}
-
-		writeCSVtoFile(outputFileName, isAppend, isNoHeader, output_data_list)
+		writeCSVtoFile(out, isAppend, newIsNoHeader, output_data_list)
 	} else {
 		if isVerbose {
 			fmt.Println("   No comments found for PR, skipping...")
@@ -223,20 +212,15 @@ func validatePRspec(prSpec string) (org string, project string, prNbr int, err e
 }
 
 // Write the string slice to a file formatted as a CSV
-func writeCSVtoFile(outputFileName string, isAppend bool, isNoHeader bool, csv_output_slice [][]string) {
-	//TODO: to append or not to append, that is the question
+func writeCSVtoFile(out *os.File, isAppend bool, isNoHeader bool, csv_output_slice [][]string) {
 
-	//Open output file
-	out, err := os.Create(outputFileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer out.Close()
+	localIsNoHeader := isNoHeader
 
 	//create a csv writer
 	csv_out := csv.NewWriter(out)
 
-	if !isNoHeader {
+	// Add the CSV header record, unless explicitly asked not to add it
+	if !localIsNoHeader {
 		headerWriteError := csv_out.Write(csvHeader)
 		if headerWriteError != nil {
 			log.Fatal(headerWriteError)
@@ -244,9 +228,76 @@ func writeCSVtoFile(outputFileName string, isAppend bool, isNoHeader bool, csv_o
 		csv_out.Flush()
 	}
 
+	// write all the records in memory in one swoop
 	write_err := csv_out.WriteAll(csv_output_slice)
 	if write_err != nil {
 		log.Fatal(write_err)
 	}
 	csv_out.Flush()
+}
+
+// Check whether the specified file exist
+func fileExist(fileName string) bool {
+	_, error := os.Stat(fileName)
+
+	// check if error is "file not exists"
+	if os.IsNotExist(error) {
+		return false
+	} else {
+		return true
+	}
+}
+
+// creates or opens for append (if the file exists) the output file
+// If no append is requested and the file exists, it is overwritten
+func openOutputCSV(outFname string, isAppend bool, isNoHeader bool) (*os.File, bool) {
+
+	isExisting := fileExist(outputFileName)
+	localIsNoHeader := isNoHeader
+
+	var isAppendString string
+	isNoHeaderString := "without"
+	if !localIsNoHeader {
+		isNoHeaderString = "with"
+	}
+
+	var out *os.File
+	var open_error error
+
+	if isExisting {
+		if isAppend {
+			// Open for append
+			out, open_error = os.OpenFile(outFname, os.O_APPEND|os.O_WRONLY, 0644)
+			if open_error != nil {
+				log.Fatal(open_error)
+			}
+
+			isAppendString = "(appending"
+			// no Header forced
+			isNoHeaderString = "without"
+			localIsNoHeader = true
+		} else {
+			// overwrite output file
+			out, open_error = os.Create(outFname)
+			if open_error != nil {
+				log.Fatal(open_error)
+			}
+			isAppendString = "(overwriting"
+			// honor the noheader setting
+		}
+	} else {
+		//create output file
+		out, open_error = os.Create(outFname)
+		if open_error != nil {
+			log.Fatal(open_error)
+		}
+		isAppendString = "(creating"
+		// honor noHeader setting
+	}
+
+	if isVerbose {
+		fmt.Printf("Writing data to \"%s\" %s %s header)\n", outputFileName, isAppendString, isNoHeaderString)
+	}
+
+	return out, localIsNoHeader
 }
