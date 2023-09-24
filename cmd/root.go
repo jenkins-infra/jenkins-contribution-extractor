@@ -69,6 +69,10 @@ func init() {
 	//Disable the Cobra completion options
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	// Don't sort flags in alphabetical order
+	rootCmd.Flags().SortFlags = false
+	rootCmd.PersistentFlags().SortFlags = false
+
 }
 
 // Load the GitHub token from the specified environment variable
