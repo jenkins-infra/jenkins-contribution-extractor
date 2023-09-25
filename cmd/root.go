@@ -242,7 +242,10 @@ func performAction(inputFile string) {
 
 		// update the progress bar if in quiet mode
 		if !isVerbose {
-			bar.Add(1)
+			err := bar.Add(1)
+			if err != nil {
+				log.Printf("Unexpected error updating progress bar (%v)\n", err)
+			}
 		}
 	}
 	fmt.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
