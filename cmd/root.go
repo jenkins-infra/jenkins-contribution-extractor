@@ -26,6 +26,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/cobra"
 	// "github.com/google/go-github/v55/github"
@@ -58,7 +60,10 @@ to quickly create a Cobra application.`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		// check if the file is a correctly formatted CSV
+
+		fmt.Printf("Processing \"%s\"\n", args[0])
+
+		// read the relevant data from the file (and checking it)
 		loadPrListFile(args[0], isVerbose)
 
 		// loop though the file
@@ -96,14 +101,12 @@ func init() {
 var referenceCSVheader = []string{"org", "repository", "number", "url", "state", "created_at", "merged_at", "user.login", "month_year", "title"}
 
 // Loads the data from a file and try to parse it as a CSV
-func loadPrListFile(fileName string, isVerbose bool) bool {
-
-	var isValidTable = true
+func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 
 	f, err := os.Open(fileName)
 	if err != nil {
 		log.Printf("Unable to read input file "+fileName+"\n", err)
-		return false
+		return nil, false
 	}
 	defer f.Close()
 
@@ -112,107 +115,85 @@ func loadPrListFile(fileName string, isVerbose bool) bool {
 	headerLine, err1 := r.Read()
 	if err1 != nil {
 		log.Printf("Unexpected error loading"+fileName+"\n", err)
-		return false
+		return nil, false
 	}
 
 	if isVerbose {
-		fmt.Println("Checking input file format")
-		fmt.Printf("  - Number of columns defined in header: %d\n", len(headerLine))
+		fmt.Println("Checking input file")
 	}
 
-	//TODO: check result
-	validateHeader(headerLine, referenceCSVheader, isVerbose)
+	if !validateHeader(headerLine, referenceCSVheader, isVerbose) {
+		fmt.Println(" Error: header is incorrect.")
+		return nil, false
+	} else {
+		if isVerbose {
+			fmt.Printf("  - Header is correct\n")
+		}
+	}
 
-	// // first column should be empty
-	// if firstLine[0] != "" {
-	// 	fmt.Println("Not the expected first column name (should be empty)")
-	// 	return false
-	// }
-	// if isVerboseCheck {
-	// 	fmt.Println("  - File's header start with empty column name.")
-	// }
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Printf("Unexpected error loading \""+fileName+"\"\n", err)
+		return nil, false
+	}
 
-	// //loop through columns to check headings
-	// month_regexp, _ := regexp.Compile("20[0-9]{2}-[0-9]{2}")
-	// for i, s := range firstLine {
-	// 	if i != 0 {
-	// 		if !month_regexp.MatchString(s) {
-	// 			fmt.Printf("Column header %s is not of the expected format (YYYY-MM)\n", s)
-	// 			return false
-	// 		}
-	// 	}
-	// }
-	// if isVerboseCheck {
-	// 	endMonth := firstLine[len(firstLine)-1]
-	// 	fmt.Printf("  - File's header data column format (\"20YY-MM\"). Most recent data is \"%s\"\n", endMonth)
-	// }
+	if len(records) < 2 {
+		fmt.Printf("Error: No data available after the header\n")
+		return nil, false
+	}
+	if isVerbose {
+		fmt.Println("  - At least one Pull Request data available")
+	}
 
-	// nbrOfColumns := len(firstLine)
-	// if nbrOfColumns < 3 {
-	// 	fmt.Printf("Not enough monthly data available\n")
-	// 	return false
-	// }
-	// if isVerboseCheck {
-	// 	fmt.Printf("  - More than one month data available\n")
-	// }
+	var prList []string
+	org_regexp, _ := regexp.Compile(`^(jenkinsci|jenkins-infra)$`)
+	prj_regexp, _ := regexp.Compile(`^[\w-\.]+$`) // see https://stackoverflow.com/questions/59081778/rules-for-special-characters-in-github-repository-name
+	pr_regexp, _ := regexp.Compile(`^\d+$`)
 
-	// records, err := r.ReadAll()
-	// if err != nil {
-	// 	log.Printf("Unexpected error loading"+fileName+"\n", err)
-	// 	return false
-	// }
+	// Check the loaded data
+	for i, dataLine := range records {
+		//Skip header line as it has already been checked
+		if i == 0 {
+			continue
+		}
 
-	// if len(records) < 2 {
-	// 	fmt.Printf("No data available after the header\n")
-	// 	return false
-	// }
-	// if isVerboseCheck {
-	// 	fmt.Println("  - At least one submitter's data available")
-	// }
+		// Org must be within list (jenkinsci and jenkins_infra)
+		org := dataLine[0]
+		if !org_regexp.MatchString(strings.ToLower(org)) {
+			if isVerbose {
+				fmt.Printf(" Error: ORG field \"%s\" is not the expected value (\"jenkinsci\" or \"jenkins-infra\")", org)
+			}
+			return nil, false
+		}
 
-	// //The GitHub user validation regexp (see https://stackoverflow.com/questions/58726546/github-username-convention-using-regex)
-	// // should be regexp.Compile(`^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$`). But the dataset contains "invalid" data: username ending with a "-" or
-	// // a double "-" in the name.
-	// name_exp, _ := regexp.Compile(`^[a-zA-Z0-9\-]+$`)
+		// project name must be "^[\w-\.]+$"
+		prj := dataLine[1]
+		if !prj_regexp.MatchString(strings.ToLower(prj)) {
+			if isVerbose {
+				fmt.Printf(" Error: PRJ field \"%s\" is not of the expected format", prj)
+			}
+			return nil, false
+		}
 
-	// //Check the loaded data
-	// for i, dataLine := range records {
-	// 	//Skip header line as it has already been checked
-	// 	if i == 0 {
-	// 		continue
-	// 	}
-	// 	for ii, column := range dataLine {
-	// 		//check the GitHub user (first columns)
-	// 		if ii == 0 {
-	// 			if !(len(column) < 40 && len(column) > 0 && name_exp.MatchString(column)) {
-	// 				fmt.Printf("Submitter \"%s\" at line %d does not follow GitHub rules\n", column, i)
-	// 				return false
-	// 			}
-	// 		} else {
-	// 			// check the other columns is an integer (we don't check the sign)
-	// 			if data_value, err := strconv.Atoi(column); err != nil {
-	// 				fmt.Printf("Value \"%s\" at line %d (column %d) isn't an integer\n", column, i, ii)
-	// 				return false
-	// 			} else {
-	// 				if data_value < 0 {
-	// 					fmt.Printf("Value \"%s\" at line %d (column %d) is negative\n", column, i, ii)
-	// 					return false
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+		// PR number must be a number
+		prNbr := dataLine[2]
+		if !pr_regexp.MatchString(prNbr) {
+			if isVerbose {
+				fmt.Printf(" Error: PR field \"%s\" is not a (positive) number", prNbr)
+			}
+			return nil, false
+		}
 
-	// if isVerboseCheck {
-	// 	fmt.Println("  - Number of data columns match header columns.")
-	// 	fmt.Printf("  - Records have a valid GitHub username and number of submitted PRs. (%d data records)\n", len(records)-1)
-	// }
+		prInfo := fmt.Sprintf("%s/%s/%s", org, prj, prNbr)
+		prList = append(prList, prInfo)
 
-	// if !isSilent {
-	// 	fmt.Printf("\nSuccessfully checked \"%s\"\n   It is a valid Jenkins Submitter Pivot Table and can be processes\n\n", fileName)
-	// }
+	}
 
-	return isValidTable
+	if isVerbose {
+		fmt.Printf("Successfully loaded \"%s\" (%d Pull Request to analyze)\n", fileName, len(prList))
+	}
+
+	return prList, true
 }
 
 // Checks whether the retrieved header is equivalent to the reference header
