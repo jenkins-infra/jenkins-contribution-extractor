@@ -64,8 +64,19 @@ to quickly create a Cobra application.`,
 		fmt.Printf("Processing \"%s\"\n", args[0])
 
 		// read the relevant data from the file (and checking it)
-		loadPrListFile(args[0], isVerbose)
+		prList, result := loadPrListFile(args[0], isVerbose)
+		if !result {
+			fmt.Printf("Could not load \"%s\"\n",args[0])
+			os.Exit(1)
+		}
 
+		for i, pr_line := range prList {
+			if i ==0 {
+				// handle the first create
+			}
+			getCommenters(pr_line,globalIsAppend,globalIsNoHeader,outputFileName)
+		}
+		
 		// loop though the file
 		//   call the get command for each PR
 
