@@ -77,12 +77,12 @@ func init() {
 //TODO: handle secondary quota error
 
 // Get the requested commenter data, extract it, and write it to CSV
-func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName string) {
+func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName string) int {
 
 	org, prj, pr, err := validatePRspec(prSpec)
 	if err != nil {
 		fmt.Printf("Unexpected error in PR specification (%v)\n Skipping %s\n", err, prSpec)
-		return
+		return 0
 	}
 
 	if isVerbose {
@@ -94,7 +94,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 			fmt.Printf("Fetching comments for %s\n", prSpec)
 		}
 		fmt.Printf("Error: %v\n   Skipping....\n", err)
-		return
+		return 0
 	}
 
 	// Only process if data was found
@@ -118,6 +118,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 			fmt.Println("   No comments found for PR, skipping...")
 		}
 	}
+	return nbrOfComments
 }
 
 // Get the comment data from GitHub.
