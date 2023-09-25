@@ -142,14 +142,22 @@ func openOutputCSV(outFname string, isAppend bool, isNoHeader bool) (*os.File, b
 	return out, localIsNoHeader
 }
 
-// Check whether the specified file exist
+// Validates that the input file is a real file (and not a directory)
 func fileExist(fileName string) bool {
-	_, error := os.Stat(fileName)
-
-	// check if error is "file not exists"
-	if os.IsNotExist(error) {
+	info, err := os.Stat(fileName)
+	if os.IsNotExist(err) {
 		return false
-	} else {
-		return true
 	}
+	return !info.IsDir()
+}
+
+// Load the GitHub token from the specified environment variable
+func loadGitHubToken(envVariableName string) string {
+	token := os.Getenv(envVariableName)
+	if token == "" {
+		fmt.Println("Unauthorized: No token present")
+		//This is a major error: we crash out of the program
+		os.Exit(0)
+	}
+	return token
 }

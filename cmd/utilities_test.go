@@ -92,3 +92,38 @@ func Test_validatePRspec(t *testing.T) {
 		})
 	}
 }
+
+func Test_fileExist(t *testing.T) {
+	type args struct {
+		fileName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"Happy case",
+			args{"../test-data/big-submission-list.csv"},
+			true,
+		},
+		{
+			"File does not exist",
+			args{"unexistantFile.txt"},
+			false,
+		},
+		{
+			"File is a directory in fact",
+			args{"../test-data"},
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := fileExist(tt.args.fileName); got != tt.want {
+				t.Errorf("fileExist() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

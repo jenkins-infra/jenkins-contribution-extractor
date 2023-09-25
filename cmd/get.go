@@ -112,6 +112,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		defer out.Close()
 
 		writeCSVtoFile(out, isAppend, newIsNoHeader, output_data_list)
+		out.Close()
 	} else {
 		if isVerbose {
 			fmt.Println("   No comments found for PR, skipping...")
