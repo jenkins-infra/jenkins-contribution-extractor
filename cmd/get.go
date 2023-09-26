@@ -165,7 +165,7 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.IssueComme
 
 // Load the collected comment data in the output data structure
 // TODO: create a test
-func load_data(org string, prj string, pr_number string, comments []*github.IssueComment) [][]string {
+func load_issueComments(org string, prj string, pr_number string, comments []*github.IssueComment) [][]string {
 	var output_slice [][]string
 	for _, comment := range comments {
 		var output_record []string
@@ -175,11 +175,54 @@ func load_data(org string, prj string, pr_number string, comments []*github.Issu
 		timestamp := comment.GetCreatedAt().String()
 		month := timestamp[0:7]
 
-				commentURL := comment.GetHTMLURL()
+		// create record
+		output_record = append(output_record, pr_ref, commenter, month)
 
-		if isDebug {
-			fmt.Printf("- %s, %s, %s, %v, %s\n", pr_ref, commenter, timestamp, commentURL)
+		//append the record to the list we are building
+		output_slice = append(output_slice, output_record)
+	}
+
+	return output_slice
+}
+
+// Get the reviews data from GitHub.
+func fetchReviews(org string, project string, pr_nbr int) ([]*github.PullRequestReview, error) {
+
+	// retrieve the token value from the specified environment variable
+	// ghTokenVar is global and set by the CLI parser
+	ghToken := loadGitHubToken(ghTokenVar)
+
+	client := github.NewClient(nil).WithAuthToken(ghToken)
+
+	var allComments []*github.PullRequestReview
+	opt := &github.ListOptions{PerPage: 10}
+
+	for {
+		comments, resp, err := client.PullRequests.ListReviews(context.Background(), org, project, pr_nbr, opt)
+		if err != nil {
+			return nil, err
 		}
+		allComments = append(allComments, comments...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	return allComments, nil
+}
+
+// Load the collected comment data in the output data structure
+// TODO: create a test
+func load_reviewComments(org string, prj string, pr_number string, reviews []*github.PullRequestReview) [][]string {
+	var output_slice [][]string
+	for _, comment := range reviews {
+		var output_record []string
+
+		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
+		commenter := *comment.GetUser().Login
+		timestamp := comment.GetSubmittedAt().String()
+		month := timestamp[0:7]
 
 		// create record
 		output_record = append(output_record, pr_ref, commenter, month)
