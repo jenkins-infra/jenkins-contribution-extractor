@@ -79,6 +79,10 @@ func init() {
 // Get the requested commenter data, extract it, and write it to CSV
 func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName string) int {
 
+	if isDebug {
+		fmt.Println("*** Debug mode enabled ***")
+	}
+
 	org, prj, pr, err := validatePRspec(prSpec)
 	if err != nil {
 		fmt.Printf("Unexpected error in PR specification (%v)\n Skipping %s\n", err, prSpec)
@@ -88,6 +92,8 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 	if isVerbose {
 		fmt.Printf("Fetching comments for %s\n", prSpec)
 	}
+	// *****
+	// Retrieving all comments (full data set) for the given PR from GitHub
 	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
 		if !isVerbose {
@@ -96,6 +102,9 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		fmt.Printf("Error: %v\n   Skipping....\n", err)
 		return 0
 	}
+
+	//*****
+	// extract the data we need from the full data set and write it to the output file
 
 	// Only process if data was found
 	nbrOfComments := len(comments)
