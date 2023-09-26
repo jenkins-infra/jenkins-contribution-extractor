@@ -135,7 +135,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 }
 
 // Get the comment data from GitHub.
-func fetchComments(org string, project string, pr_nbr int) ([]*github.PullRequestComment, error) {
+func fetchComments(org string, project string, pr_nbr int) ([]*github.IssueComment, error) {
 
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
@@ -143,14 +143,13 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 
 	client := github.NewClient(nil).WithAuthToken(ghToken)
 
-	var allComments []*github.PullRequestComment
-	opt := &github.PullRequestListCommentsOptions{
+	var allComments []*github.IssueComment
+	opt := &github.IssueListCommentsOptions{
 		ListOptions: github.ListOptions{PerPage: 10},
 	}
 
 	for {
-		comments, resp, err := client.PullRequests.ListComments(context.Background(), org, project, pr_nbr, opt)
-		// client.Issues.ListComments()
+		comments, resp, err := client.Issues.ListComments(context.Background(), org, project, pr_nbr, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -166,7 +165,7 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 
 // Load the collected comment data in the output data structure
 // TODO: create a test
-func load_data(org string, prj string, pr_number string, comments []*github.PullRequestComment) [][]string {
+func load_data(org string, prj string, pr_number string, comments []*github.IssueComment) [][]string {
 	var output_slice [][]string
 	for _, comment := range comments {
 		var output_record []string

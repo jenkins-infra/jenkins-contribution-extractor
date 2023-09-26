@@ -83,7 +83,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&globalIsAppend, "append", "a", false, "Appends data to existing output file.")
 	rootCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
 	rootCmd.PersistentFlags().BoolVarP(&isVerbose, "verbose", "v", false, "Displays useful info during the extraction.")
-	rootCmd.PersistentFlags().BoolVarP(&isDebug,"debug","",false,"Display debug information (super verbose mode)")
+	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "", false, "Display debug information (super verbose mode)")
 
 	//Disable the Cobra completion options
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -234,7 +234,7 @@ func performAction(inputFile string) {
 	}
 
 	var bar *progressbar.ProgressBar
-	if !isVerbose { 
+	if !isVerbose {
 		bar = progressbar.Default(int64(len(prList)))
 	}
 
@@ -246,8 +246,8 @@ func performAction(inputFile string) {
 
 		//do some accounting
 		if nbrOfComments == 0 {
-			nbrPR_noComment++ 
-		}else {
+			nbrPR_noComment++
+		} else {
 			nbrPR_withComments++
 		}
 
