@@ -39,7 +39,7 @@ func validatePRspec(prSpec string) (org string, project string, prNbr int, err e
 	splittedString := strings.Split(strings.TrimSpace(prSpec), "/")
 
 	if len(splittedString) != 3 {
-		return "", "", -1, fmt.Errorf("Invalid number of elements in prSpec. (expecting 3, found %v)\n", len(splittedString))
+		return "", "", -1, fmt.Errorf("Invalid number of elements in PR Specification (\"org/project/pr\"). (expecting 3, found %v)\n", len(splittedString))
 	}
 
 	work_Org := splittedString[0]
@@ -47,18 +47,18 @@ func validatePRspec(prSpec string) (org string, project string, prNbr int, err e
 	prString := splittedString[2]
 
 	if strings.TrimSpace(work_Org) == "" {
-		return "", "", -1, fmt.Errorf("Organization element in prSpec is empty\n")
+		return "", "", -1, fmt.Errorf("Organization element in PR Specification is empty\n")
 	}
 	if strings.TrimSpace(work_Project) == "" {
-		return "", "", -1, fmt.Errorf("Project element in prSpec is empty\n")
+		return "", "", -1, fmt.Errorf("Project element in PR Specification is empty\n")
 	}
 	if strings.TrimSpace(prString) == "" {
-		return "", "", -1, fmt.Errorf("PR element in prSpec is empty\n")
+		return "", "", -1, fmt.Errorf("PR element in PR Specification is empty\n")
 	}
 
 	work_prNbr, err := strconv.Atoi(strings.TrimSpace(prString))
 	if err != nil {
-		return "", "", -1, fmt.Errorf("PR part of psSpec is not numerical (%v)\n", err)
+		return "", "", -1, fmt.Errorf("PR part of PR Specification is not numerical (%v)\n", err)
 	}
 	return work_Org, work_Project, work_prNbr, nil
 }
