@@ -76,6 +76,10 @@ func init() {
 
 //TODO: handle secondary quota error
 
+//**********
+// This is where it starts and the magic happens
+//**********
+
 // Get the requested commenter data, extract it, and write it to CSV
 func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName string) int {
 
@@ -92,7 +96,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 	if isVerbose {
 		fmt.Printf("Fetching comments for %s\n", prSpec)
 	}
-	// *****
+	// ------
 	// Retrieving all comments (full data set) for the given PR from GitHub
 	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
@@ -103,7 +107,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		return 0
 	}
 
-	//*****
+	// ------
 	// extract the data we need from the full data set and write it to the output file
 
 	// Only process if data was found
@@ -146,6 +150,7 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 
 	for {
 		comments, resp, err := client.PullRequests.ListComments(context.Background(), org, project, pr_nbr, opt)
+		// client.Issues.ListComments()
 		if err != nil {
 			return nil, err
 		}
@@ -170,6 +175,12 @@ func load_data(org string, prj string, pr_number string, comments []*github.Pull
 		commenter := *comment.GetUser().Login
 		timestamp := comment.GetCreatedAt().String()
 		month := timestamp[0:7]
+
+				commentURL := comment.GetHTMLURL()
+
+		if isDebug {
+			fmt.Printf("- %s, %s, %s, %v, %s\n", pr_ref, commenter, timestamp, commentURL)
+		}
 
 		// create record
 		output_record = append(output_record, pr_ref, commenter, month)
