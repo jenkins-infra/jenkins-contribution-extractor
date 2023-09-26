@@ -97,7 +97,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		fmt.Printf("Fetching comments for %s\n", prSpec)
 	}
 	// ------
-	// Retrieving all comments (full data set) for the given PR from GitHub
+	// Retrieving all comments for the given PR from GitHub
 	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
 		if !isVerbose {
@@ -106,19 +106,33 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		fmt.Printf("Error: %v\n   Skipping....\n", err)
 		return 0
 	}
+	// Load the collected comment data in the output data structure
+	output_comment_list := load_issueComments(org, prj, strconv.Itoa(pr), comments)
 
 	// ------
-	// extract the data we need from the full data set and write it to the output file
+	// Retrieving all review comments for the given PR from GitHub
+	review_comments, err := fetchReviews(org, prj, pr)
+	if err != nil {
+		if !isVerbose {
+			fmt.Printf("Fetching review comments for %s\n", prSpec)
+		}
+		fmt.Printf("Error: %v\n   Skipping....\n", err)
+		return 0
+	}
+	// Load the collected comment data in the output data structure
+	output_review_list := load_reviewComments(org, prj, strconv.Itoa(pr), review_comments)
+
+	// Assemble the two lists
+	output_data_list := append(output_comment_list, output_review_list...)
 
 	// Only process if data was found
-	nbrOfComments := len(comments)
+	nbrOfComments := len(output_data_list)
 	if nbrOfComments > 0 {
 
 		if isVerbose {
-			fmt.Printf("   Found %d comments.\n", nbrOfComments)
+			fmt.Printf("   Found %d comments (%d review comments and %d general comments).\n",
+				nbrOfComments, len(output_review_list), len(output_comment_list))
 		}
-		// Load the collected comment data in the output data structure
-		output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 
 		// Creates, overwrites, or opens for append depending on the combination
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
