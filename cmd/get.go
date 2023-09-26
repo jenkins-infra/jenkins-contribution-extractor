@@ -97,7 +97,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		fmt.Printf("Fetching comments for %s\n", prSpec)
 	}
 	// ------
-	// Retrieving all comments (full data set) for the given PR from GitHub
+	// Retrieving all comments for the given PR from GitHub
 	comments, err := fetchComments(org, prj, pr)
 	if err != nil {
 		if !isVerbose {
@@ -106,19 +106,33 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		fmt.Printf("Error: %v\n   Skipping....\n", err)
 		return 0
 	}
+	// Load the collected comment data in the output data structure
+	output_comment_list := load_issueComments(org, prj, strconv.Itoa(pr), comments)
 
 	// ------
-	// extract the data we need from the full data set and write it to the output file
+	// Retrieving all review comments for the given PR from GitHub
+	review_comments, err := fetchReviews(org, prj, pr)
+	if err != nil {
+		if !isVerbose {
+			fmt.Printf("Fetching review comments for %s\n", prSpec)
+		}
+		fmt.Printf("Error: %v\n   Skipping....\n", err)
+		return 0
+	}
+	// Load the collected comment data in the output data structure
+	output_review_list := load_reviewComments(org, prj, strconv.Itoa(pr), review_comments)
+
+	// Assemble the two lists
+	output_data_list := append(output_comment_list, output_review_list...)
 
 	// Only process if data was found
-	nbrOfComments := len(comments)
+	nbrOfComments := len(output_data_list)
 	if nbrOfComments > 0 {
 
 		if isVerbose {
-			fmt.Printf("   Found %d comments.\n", nbrOfComments)
+			fmt.Printf("   Found %d comments (%d review comments and %d general comments).\n",
+				nbrOfComments, len(output_review_list), len(output_comment_list))
 		}
-		// Load the collected comment data in the output data structure
-		output_data_list := load_data(org, prj, strconv.Itoa(pr), comments)
 
 		// Creates, overwrites, or opens for append depending on the combination
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
@@ -135,7 +149,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 }
 
 // Get the comment data from GitHub.
-func fetchComments(org string, project string, pr_nbr int) ([]*github.PullRequestComment, error) {
+func fetchComments(org string, project string, pr_nbr int) ([]*github.IssueComment, error) {
 
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
@@ -143,14 +157,13 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 
 	client := github.NewClient(nil).WithAuthToken(ghToken)
 
-	var allComments []*github.PullRequestComment
-	opt := &github.PullRequestListCommentsOptions{
+	var allComments []*github.IssueComment
+	opt := &github.IssueListCommentsOptions{
 		ListOptions: github.ListOptions{PerPage: 10},
 	}
 
 	for {
-		comments, resp, err := client.PullRequests.ListComments(context.Background(), org, project, pr_nbr, opt)
-		// client.Issues.ListComments()
+		comments, resp, err := client.Issues.ListComments(context.Background(), org, project, pr_nbr, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -166,7 +179,7 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.PullReques
 
 // Load the collected comment data in the output data structure
 // TODO: create a test
-func load_data(org string, prj string, pr_number string, comments []*github.PullRequestComment) [][]string {
+func load_issueComments(org string, prj string, pr_number string, comments []*github.IssueComment) [][]string {
 	var output_slice [][]string
 	for _, comment := range comments {
 		var output_record []string
@@ -176,11 +189,54 @@ func load_data(org string, prj string, pr_number string, comments []*github.Pull
 		timestamp := comment.GetCreatedAt().String()
 		month := timestamp[0:7]
 
-				commentURL := comment.GetHTMLURL()
+		// create record
+		output_record = append(output_record, pr_ref, commenter, month)
 
-		if isDebug {
-			fmt.Printf("- %s, %s, %s, %v, %s\n", pr_ref, commenter, timestamp, commentURL)
+		//append the record to the list we are building
+		output_slice = append(output_slice, output_record)
+	}
+
+	return output_slice
+}
+
+// Get the reviews data from GitHub.
+func fetchReviews(org string, project string, pr_nbr int) ([]*github.PullRequestReview, error) {
+
+	// retrieve the token value from the specified environment variable
+	// ghTokenVar is global and set by the CLI parser
+	ghToken := loadGitHubToken(ghTokenVar)
+
+	client := github.NewClient(nil).WithAuthToken(ghToken)
+
+	var allComments []*github.PullRequestReview
+	opt := &github.ListOptions{PerPage: 10}
+
+	for {
+		comments, resp, err := client.PullRequests.ListReviews(context.Background(), org, project, pr_nbr, opt)
+		if err != nil {
+			return nil, err
 		}
+		allComments = append(allComments, comments...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	return allComments, nil
+}
+
+// Load the collected comment data in the output data structure
+// TODO: create a test
+func load_reviewComments(org string, prj string, pr_number string, reviews []*github.PullRequestReview) [][]string {
+	var output_slice [][]string
+	for _, comment := range reviews {
+		var output_record []string
+
+		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
+		commenter := *comment.GetUser().Login
+		timestamp := comment.GetSubmittedAt().String()
+		month := timestamp[0:7]
 
 		// create record
 		output_record = append(output_record, pr_ref, commenter, month)
