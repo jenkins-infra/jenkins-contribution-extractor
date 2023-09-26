@@ -50,7 +50,7 @@ The behavior can be controlled with various flags, such as appending to an exist
 output file or overwriting it, header of no-header.
 
 This query requires authenticated API call. The GitHub Token (Personal Access Token) is
-retrieved from an environment variable (default is "GITHUB_TOKEN" but can be overriden with a flag)
+retrieved from an environment variable (default is "GITHUB_TOKEN" but can be overridden with a flag)
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
