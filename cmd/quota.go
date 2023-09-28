@@ -24,6 +24,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/google/go-github/v55/github"
 	"github.com/spf13/cobra"
@@ -61,6 +62,14 @@ func init() {
 // ---
 // Retrieves the GitHub API Quota
 func get_quota() {
+	limit, remaining := get_quota_data()
+
+	fmt.Printf("Limit: %d \nRemaining %d \n", limit, remaining)
+	//TODO: return the remaining quota
+}
+
+// Retrieves the GitHub Quota.
+func get_quota_data() (limit int, remaining int) {
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
 	ghToken := loadGitHubToken(ghTokenVar)
@@ -69,9 +78,8 @@ func get_quota() {
 
 	limitsData, _, err := client.RateLimits(context.Background())
 	if err != nil {
-		//FIXME: do proper error handling
-		return
+		log.Printf("Error getting limit: %v", err)
+		return 0, 0
 	}
-	fmt.Printf("Limit: %d \nRemaining %d \n", limitsData.Core.Limit, limitsData.Core.Remaining)
-	//TODO: return the remaining quota
+	return limitsData.Core.Limit, limitsData.Core.Remaining
 }

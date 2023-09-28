@@ -29,7 +29,7 @@ import (
 	"regexp"
 	"strings"
 
-	//https://github.com/schollz/progressbar
+	//See https://github.com/schollz/progressbar
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
@@ -59,11 +59,24 @@ var rootCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// Debug flag is hidden
-		// If set, it should work as a super verbose flag
+		initLoggers()
 		if isDebug {
-			isVerbose = true
+			loggers.debug.Println("******** New debug session ********")
 		}
+
+		if isDebug {
+			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
+
+			limit, remaining := get_quota_data()
+			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
+		}
+
 		performAction(args[0])
+
+		if isDebug {
+			limit, remaining := get_quota_data()
+			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
+		}
 	},
 }
 
@@ -216,9 +229,7 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 func performAction(inputFile string) {
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
-	if isDebug {
-		get_quota()
-	}
+
 
 	// read the relevant data from the file (and checking it)
 	prList, result := loadPrListFile(inputFile, isVerbose)

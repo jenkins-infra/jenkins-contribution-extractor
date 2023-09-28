@@ -31,3 +31,6 @@ dist/
 
 #exclude temporary executables
 jenkins-get-commenters
+
+#We don't want to keep debug traces
+debug.log

@@ -24,6 +24,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	// "log"
 	"strconv"
 
 	"github.com/google/go-github/v55/github"
@@ -62,8 +63,26 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		initLoggers()
+		if isDebug {
+			loggers.debug.Println("******** New debug session ********")
+		}
+
+		if isDebug {
+			fmt.Println("*** Debug mode enabled ***\nSee \"debug.log\" for the trace")
+		}
+
+		if isDebug {
+			limit, remaining := get_quota_data()
+			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
+		}
 
 		getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
+
+		if isDebug {
+			limit, remaining := get_quota_data()
+			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
+		}
 
 	},
 }
@@ -74,6 +93,9 @@ func init() {
 
 }
 
+//TODO: Logging
+// per query, total and type of comments
+
 //TODO: handle secondary quota error
 
 //**********
@@ -82,10 +104,6 @@ func init() {
 
 // Get the requested commenter data, extract it, and write it to CSV
 func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName string) int {
-
-	if isDebug {
-		fmt.Println("*** Debug mode enabled ***")
-	}
 
 	org, prj, pr, err := validatePRspec(prSpec)
 	if err != nil {
@@ -132,6 +150,11 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		if isVerbose {
 			fmt.Printf("   Found %d comments (%d review comments and %d general comments).\n",
 				nbrOfComments, len(output_review_list), len(output_comment_list))
+		}
+
+		if isDebug {
+			loggers.debug.Printf("For \"%s\" found %d comments (%d review comments and %d general comments).\n",
+			prSpec, nbrOfComments, len(output_review_list), len(output_comment_list))
 		}
 
 		// Creates, overwrites, or opens for append depending on the combination
