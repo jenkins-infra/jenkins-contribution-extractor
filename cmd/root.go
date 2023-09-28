@@ -216,6 +216,9 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 func performAction(inputFile string) {
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
+	if isDebug {
+		get_quota()
+	}
 
 	// read the relevant data from the file (and checking it)
 	prList, result := loadPrListFile(inputFile, isVerbose)
@@ -240,10 +243,12 @@ func performAction(inputFile string) {
 
 	nbrPR_noComment := 0
 	nbrPR_withComments := 0
+	totalComments := 0
 	for _, pr_line := range prList {
 		//Process the line
 		nbrOfComments := getCommenters(pr_line, isAppend, globalIsNoHeader, outputFileName)
 
+		totalComments = totalComments + nbrOfComments
 		//do some accounting
 		if nbrOfComments == 0 {
 			nbrPR_noComment++
@@ -261,5 +266,6 @@ func performAction(inputFile string) {
 	}
 	fmt.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
 	fmt.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
+	fmt.Printf("Total comments:            %d\n", totalComments)
 
 }
