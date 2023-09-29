@@ -25,6 +25,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
+	"unicode"
 
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -66,13 +68,6 @@ import (
 }
 */
 
-type comment struct {
-	Author struct {
-		Login string
-	}
-	CreatedAt githubv4.DateTime
-}
-
 var prQuery2 struct {
 	Repository struct {
 		Description string
@@ -83,7 +78,7 @@ var prQuery2 struct {
 					CreatedAt githubv4.DateTime
 					Body      string
 					Author    struct {
-						Login githubv4.String
+						Login string
 					}
 				}
 			} `graphql:"comments(first: 100)"`
@@ -92,14 +87,14 @@ var prQuery2 struct {
 					CreatedAt githubv4.DateTime
 					BodyText  string
 					Author    struct {
-						Login githubv4.String
+						Login string
 					}
 					Comments struct {
 						Nodes []struct {
 							CreatedAt githubv4.DateTime
 							Body      string
 							Author    struct {
-								Login githubv4.String
+								Login string
 							}
 						}
 					} `graphql:"comments(first: 100)"`
@@ -109,7 +104,7 @@ var prQuery2 struct {
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
 
-func fetchComments_alt(org string, prj string, pr int) {
+func fetchComments_alt(org string, prj string, pr int) (nbrComment int, output [][]string) {
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
 	ghToken := loadGitHubToken(ghTokenVar)
@@ -127,32 +122,73 @@ func fetchComments_alt(org string, prj string, pr int) {
 
 	err := client.Query(context.Background(), &prQuery2, variables)
 	if err != nil {
+		//FIXME: Better error handling
 		log.Panic(err)
 	}
-	fmt.Println(prQuery2.Repository.Description)
-	fmt.Println(prQuery2.Repository.PullRequest.Title)
 
+	prSpec := fmt.Sprintf("%s/%s/%d", org, prj, pr)
 	totalComments := 0
+	dbgDateFormat := "2006-01-02 15:04:05"
+
+	var output_slice [][]string
 
 	for i, comment := range prQuery2.Repository.PullRequest.Comments.Nodes {
-		fmt.Printf("%d. %s %s %s\n", i+1, comment.Author.Login, comment.CreatedAt, comment.Body)
+		output_slice = append(output_slice, createRecord(prSpec, comment.Author.Login, comment.CreatedAt))
+		fmt.Printf("%d. %s %s \"%s\"\n", i+1, comment.Author.Login, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 		totalComments++
 	}
 	fmt.Printf("Nbr PR Comments: %d\n", len(prQuery2.Repository.PullRequest.Comments.Nodes))
 
 	for i, comment := range prQuery2.Repository.PullRequest.Reviews.Nodes {
-		fmt.Printf("%d. %s %s\n", i+1, comment.Author.Login, comment.CreatedAt)
+		fmt.Printf("%d. %s %s \"%s\"\n", i+1, comment.Author.Login, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.BodyText))
+		//If there is a single comment for the review, there is no review comment
 		if len(comment.Comments.Nodes) > 1 {
+			output_slice = append(output_slice, createRecord(prSpec, comment.Author.Login, comment.CreatedAt))
 			totalComments++
 		}
 		for ii, comment := range comment.Comments.Nodes {
-			// if ii == 0 {
-			// 	continue
-			// }
-			fmt.Printf("  %d. %s %s\n", ii+1, comment.Author.Login, comment.CreatedAt)
+			output_slice = append(output_slice, createRecord(prSpec, comment.Author.Login, comment.CreatedAt))
+			fmt.Printf("  %d. %s %s \"%s\"\n", ii+1, comment.Author.Login, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 			totalComments++
 		}
 	}
 	fmt.Printf("Nbr PR Reviews: %d\n", len(prQuery2.Repository.PullRequest.Reviews.Nodes))
 	fmt.Printf("Grand total de reviews: %d\n", totalComments)
+	fmt.Printf("\n%v/n", output_slice)
+	return totalComments, output_slice
+}
+
+// Removes and truncates a Body or BodyText element
+func cleanBody(input string) (output string) {
+	re := regexp.MustCompile(`\r?\n`)
+	temp := re.ReplaceAllString(input, " ")
+
+	output = truncateString(temp, 20)
+	return output
+}
+
+func truncateString(input string, max int) (otput string) {
+	lastSpaceIx := -1
+	len := 0
+	for i, r := range input {
+		if unicode.IsSpace(r) {
+			lastSpaceIx = i
+		}
+		len++
+		if len >= max {
+			if lastSpaceIx != -1 {
+				return input[:lastSpaceIx] + "..."
+			}
+			// If here, string is longer than max, but has no spaces
+		}
+	}
+	// If here, string is shorter than max
+	return input
+}
+
+func createRecord(prSpec string, user string, date githubv4.DateTime) []string {
+	var output_record []string
+	monthFormat := "2006-01"
+	output_record = append(output_record, prSpec, user, date.Format(monthFormat))
+	return output_record
 }

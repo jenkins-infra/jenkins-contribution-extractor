@@ -21,7 +21,70 @@ THE SOFTWARE.
 */
 package cmd
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
+
+var testResult1 = [][]string{
+	{"on4kjm/flecli/1","jlevesy","2020-07"},
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
+	{"on4kjm/flecli/1","jlevesy","2020-07"},	
+}
 
 func Test_fetchComments_alt(t *testing.T) {
 	type args struct {
@@ -30,8 +93,10 @@ func Test_fetchComments_alt(t *testing.T) {
 		pr  int
 	}
 	tests := []struct {
-		name string
-		args args
+		name           string
+		args           args
+		wantNbrComment int
+		wantOutput     [][]string
 	}{
 		{
 			"Blank test",
@@ -40,11 +105,57 @@ func Test_fetchComments_alt(t *testing.T) {
 				prj: "flecli",
 				pr:  1,
 			},
+			57, testResult1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fetchComments_alt(tt.args.org, tt.args.prj, tt.args.pr)
+			gotNbrComment, gotOutput := fetchComments_alt(tt.args.org, tt.args.prj, tt.args.pr)
+			if gotNbrComment != tt.wantNbrComment {
+				t.Errorf("fetchComments_alt() gotNbrComment = %v, want %v", gotNbrComment, tt.wantNbrComment)
+			}
+			if !reflect.DeepEqual(gotOutput, tt.wantOutput) {
+				t.Errorf("fetchComments_alt() gotOutput = %v, want %v", gotOutput, tt.wantOutput)
+			}
+		})
+	}
+}
+
+func Test_cleanBody(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantOutput string
+	}{
+		{
+			"Happy case",
+			args{input: "aa aaa \nbbb bbb\n"},
+			"aa aaa  bbb bbb ",
+		},
+		{
+			"Empty string",
+			args{input: ""},
+			"",
+		},
+		{
+			"No return",
+			args{input: "aaaa bbbb ccc"},
+			"aaaa bbbb ccc",
+		},
+		{
+			"Truncate string",
+			args{input: "aaaa bbbb cccc dddd eeee ffff"},
+			"aaaa bbbb cccc dddd...",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotOutput := cleanBody(tt.args.input); gotOutput != tt.wantOutput {
+				t.Errorf("cleanBody() = %v, want %v", gotOutput, tt.wantOutput)
+			}
 		})
 	}
 }
