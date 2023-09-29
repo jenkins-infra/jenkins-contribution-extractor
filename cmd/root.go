@@ -28,6 +28,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	//See https://github.com/schollz/progressbar
 	"github.com/schollz/progressbar/v3"
@@ -41,6 +42,7 @@ var isVerbose bool
 var isDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
+var globalTimeDelay time.Duration
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -238,6 +240,24 @@ func performAction(inputFile string) {
 		os.Exit(1)
 	}
 
+	//Try to compute a timeDelay so that we don't exhaust our quota
+	//TODO:
+
+	nbrOfPr := len(prList)
+	_, remaining := get_quota_data()
+	time_delay := float64(remaining) / 3600
+	load := float64(nbrOfPr) * 1.2
+	if load < float64(remaining) {
+		globalTimeDelay = 0
+	} else {
+		globalTimeDelay = time.Duration(int64(time_delay)) * time.Millisecond
+	}
+
+	if isDebug {
+		loggers.debug.Printf("Load: %.2f, remaining: %d. globalTimeDelay: %d milliSec\n", load, remaining, int64(time_delay))
+	}
+
+
 	isAppend := globalIsAppend
 	if !globalIsAppend {
 		// Meaning that we need to create a new file
@@ -277,6 +297,12 @@ func performAction(inputFile string) {
 	}
 	fmt.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
 	fmt.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
-	fmt.Printf("Total comments:            %d\n", totalComments)
+	fmt.Printf("Total comments:             %d\n", totalComments)
+
+	if isDebug {
+		loggers.debug.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
+		loggers.debug.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
+		loggers.debug.Printf("Total comments:             %d\n", totalComments)
+	}
 
 }

@@ -24,6 +24,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
+
 	// "log"
 	"strconv"
 
@@ -77,6 +79,8 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 		}
 
+		globalTimeDelay = 0
+
 		getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
 
 		if isDebug {
@@ -92,9 +96,6 @@ func init() {
 	rootCmd.AddCommand(getCmd)
 
 }
-
-//TODO: Logging
-// per query, total and type of comments
 
 //TODO: handle secondary quota error
 
@@ -153,7 +154,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		}
 
 		if isDebug {
-			loggers.debug.Printf("For \"%s\" found %d comments (%d review comments and %d general comments).\n",
+			loggers.debug.Printf("For \"%-40s\" found %d comments (%d review comments and %d general comments).\n",
 			prSpec, nbrOfComments, len(output_review_list), len(output_comment_list))
 		}
 
@@ -195,6 +196,9 @@ func fetchComments(org string, project string, pr_nbr int) ([]*github.IssueComme
 			break
 		}
 		opt.Page = resp.NextPage
+
+		// Add a delay (if necessary) so that we don't blow our quota
+		time.Sleep(globalTimeDelay)
 	}
 
 	return allComments, nil

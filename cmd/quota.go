@@ -65,7 +65,6 @@ func get_quota() {
 	limit, remaining := get_quota_data()
 
 	fmt.Printf("Limit: %d \nRemaining %d \n", limit, remaining)
-	//TODO: return the remaining quota
 }
 
 // Retrieves the GitHub Quota.
