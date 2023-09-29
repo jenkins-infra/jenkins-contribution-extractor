@@ -155,7 +155,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 
 		if isDebug {
 			loggers.debug.Printf("For \"%-40s\" found %d comments (%d review comments and %d general comments).\n",
-			prSpec, nbrOfComments, len(output_review_list), len(output_comment_list))
+				prSpec, nbrOfComments, len(output_review_list), len(output_comment_list))
 		}
 
 		// Creates, overwrites, or opens for append depending on the combination
@@ -212,7 +212,14 @@ func load_issueComments(org string, prj string, pr_number string, comments []*gi
 		var output_record []string
 
 		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
-		commenter := *comment.GetUser().Login
+
+		commenter := ""
+		if comment.GetUser() == nil {
+			commenter = "deleted_user"
+		} else {
+			commenter = *comment.GetUser().Login
+		}
+
 		timestamp := comment.GetCreatedAt().String()
 		month := timestamp[0:7]
 
@@ -261,7 +268,14 @@ func load_reviewComments(org string, prj string, pr_number string, reviews []*gi
 		var output_record []string
 
 		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
-		commenter := *comment.GetUser().Login
+
+		commenter := ""
+		if comment.GetUser() == nil {
+			commenter = "deleted_account"
+		} else {
+			commenter = *comment.GetUser().Login
+		}
+
 		timestamp := comment.GetSubmittedAt().String()
 		month := timestamp[0:7]
 

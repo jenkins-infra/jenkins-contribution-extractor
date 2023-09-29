@@ -232,7 +232,6 @@ func performAction(inputFile string) {
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
 
-
 	// read the relevant data from the file (and checking it)
 	prList, result := loadPrListFile(inputFile, isVerbose)
 	if !result {
@@ -256,7 +255,6 @@ func performAction(inputFile string) {
 	if isDebug {
 		loggers.debug.Printf("Load: %.2f, remaining: %d. globalTimeDelay: %d milliSec\n", load, remaining, int64(time_delay))
 	}
-
 
 	isAppend := globalIsAppend
 	if !globalIsAppend {
