@@ -231,6 +231,9 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 func performAction(inputFile string) {
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
+	if isDebug {
+		loggers.debug.Printf("Processing \"%s\"\n", inputFile)
+	}
 
 	// read the relevant data from the file (and checking it)
 	prList, result := loadPrListFile(inputFile, isVerbose)
@@ -240,8 +243,6 @@ func performAction(inputFile string) {
 	}
 
 	//Try to compute a timeDelay so that we don't exhaust our quota
-	//TODO:
-
 	nbrOfPr := len(prList)
 	_, remaining := get_quota_data()
 	time_delay := float64(remaining) / 3600
