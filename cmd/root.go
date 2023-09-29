@@ -28,8 +28,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
-	//https://github.com/schollz/progressbar
+	//See https://github.com/schollz/progressbar
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +42,7 @@ var isVerbose bool
 var isDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
+var globalTimeDelay time.Duration
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -59,11 +61,24 @@ var rootCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		// Debug flag is hidden
-		// If set, it should work as a super verbose flag
+		initLoggers()
 		if isDebug {
-			isVerbose = true
+			loggers.debug.Println("******** New debug session ********")
 		}
+
+		if isDebug {
+			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
+
+			limit, remaining := get_quota_data()
+			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
+		}
+
 		performAction(args[0])
+
+		if isDebug {
+			limit, remaining := get_quota_data()
+			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
+		}
 	},
 }
 
@@ -217,12 +232,31 @@ func performAction(inputFile string) {
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
 
+
 	// read the relevant data from the file (and checking it)
 	prList, result := loadPrListFile(inputFile, isVerbose)
 	if !result {
 		fmt.Printf("Could not load \"%s\"\n", inputFile)
 		os.Exit(1)
 	}
+
+	//Try to compute a timeDelay so that we don't exhaust our quota
+	//TODO:
+
+	nbrOfPr := len(prList)
+	_, remaining := get_quota_data()
+	time_delay := float64(remaining) / 3600
+	load := float64(nbrOfPr) * 1.2
+	if load < float64(remaining) {
+		globalTimeDelay = 0
+	} else {
+		globalTimeDelay = time.Duration(int64(time_delay)) * time.Millisecond
+	}
+
+	if isDebug {
+		loggers.debug.Printf("Load: %.2f, remaining: %d. globalTimeDelay: %d milliSec\n", load, remaining, int64(time_delay))
+	}
+
 
 	isAppend := globalIsAppend
 	if !globalIsAppend {
@@ -240,10 +274,12 @@ func performAction(inputFile string) {
 
 	nbrPR_noComment := 0
 	nbrPR_withComments := 0
+	totalComments := 0
 	for _, pr_line := range prList {
 		//Process the line
 		nbrOfComments := getCommenters(pr_line, isAppend, globalIsNoHeader, outputFileName)
 
+		totalComments = totalComments + nbrOfComments
 		//do some accounting
 		if nbrOfComments == 0 {
 			nbrPR_noComment++
@@ -261,5 +297,12 @@ func performAction(inputFile string) {
 	}
 	fmt.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
 	fmt.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
+	fmt.Printf("Total comments:             %d\n", totalComments)
+
+	if isDebug {
+		loggers.debug.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
+		loggers.debug.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
+		loggers.debug.Printf("Total comments:             %d\n", totalComments)
+	}
 
 }
