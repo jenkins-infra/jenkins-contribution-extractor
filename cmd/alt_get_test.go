@@ -27,7 +27,7 @@ func Test_fetchComments_alt(t *testing.T) {
 	type args struct {
 		org string
 		prj string
-		pr  string
+		pr  int
 	}
 	tests := []struct {
 		name string
@@ -38,7 +38,7 @@ func Test_fetchComments_alt(t *testing.T) {
 			args{
 				org: "on4kjm",
 				prj: "flecli",
-				pr: "1",
+				pr:  1,
 			},
 		},
 	}
