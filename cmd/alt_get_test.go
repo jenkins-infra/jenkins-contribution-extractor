@@ -122,7 +122,7 @@ var testResult4 = [][]string{
 
 // https://github.com/jenkinsci/credentials-plugin/pull/475
 var testResult5 = [][]string{
-	{"jenkinsci/credentials-plugin/475","jtnord","2023-09"},
+	{"jenkinsci/credentials-plugin/475", "jtnord", "2023-09"},
 }
 
 func Test_fetchComments_alt(t *testing.T) {
@@ -195,7 +195,7 @@ func Test_fetchComments_alt(t *testing.T) {
 			},
 			1, testResult5,
 		},
-		// unexisting PR
+		// FIXME: unexisting PR
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

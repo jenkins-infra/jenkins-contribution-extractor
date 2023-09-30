@@ -25,9 +25,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/google/go-github/v55/github"
+	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 // quotaCmd represents the quota command
@@ -63,8 +66,10 @@ func init() {
 // Retrieves the GitHub API Quota
 func get_quota() {
 	limit, remaining := get_quota_data()
+	fmt.Printf("V3 Limit: %d \nV3 Remaining %d \n\n", limit, remaining)
 
-	fmt.Printf("Limit: %d \nRemaining %d \n", limit, remaining)
+	limit_v4, remaining_v4, _ := get_quota_data_v4()
+	fmt.Printf("V4 Limit: %d \nV4 Remaining %d \n", limit_v4, remaining_v4)
 }
 
 // Retrieves the GitHub Quota.
@@ -81,4 +86,54 @@ func get_quota_data() (limit int, remaining int) {
 		return 0, 0
 	}
 	return limitsData.Core.Limit, limitsData.Core.Remaining
+}
+
+/*
+query {
+  viewer {
+    login
+  }
+  rateLimit {
+    limit
+    cost
+    remaining
+    resetAt
+  }
+}
+*/
+
+var quotaQuery struct {
+	Viewer struct {
+		Login string
+	}
+	RateLimit struct {
+		Limit     int
+		Cost      int
+		Remaining int
+		ResetAt   time.Time
+	}
+}
+
+func get_quota_data_v4() (limit int, remaining int, resetAt time.Time) {
+	// retrieve the token value from the specified environment variable
+	// ghTokenVar is global and set by the CLI parser
+	ghToken := loadGitHubToken(ghTokenVar)
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: ghToken},
+	)
+	httpClient := oauth2.NewClient(context.Background(), src)
+	client := githubv4.NewClient(httpClient)
+
+	err := client.Query(context.Background(), &quotaQuery, nil)
+	if err != nil {
+		//FIXME: Better error handling
+		log.Panic(err)
+	}
+
+	// fmt.Printf("User: %s\n", quotaQuery.Viewer.Login)
+	// fmt.Printf("limit:     %d\n", quotaQuery.RateLimit.Limit)
+	// fmt.Printf("cost:      %d\n", quotaQuery.RateLimit.Cost)
+	// fmt.Printf("remaining: %d\n", quotaQuery.RateLimit.Remaining)
+	// fmt.Printf("resetAt:   %s\n", quotaQuery.RateLimit.ResetAt)
+	return quotaQuery.RateLimit.Limit, quotaQuery.RateLimit.Remaining, quotaQuery.RateLimit.ResetAt
 }
