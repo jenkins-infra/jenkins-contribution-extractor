@@ -133,22 +133,40 @@ func fetchComments_alt(org string, prj string, pr int) (nbrComment int, output [
 	var output_slice [][]string
 
 	for i, comment := range prQuery2.Repository.PullRequest.Comments.Nodes {
-		output_slice = append(output_slice, createRecord(prSpec, comment.Author.Login, comment.CreatedAt))
-		fmt.Printf("%d. %s %s \"%s\"\n", i+1, comment.Author.Login, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
+		//When there is no info about the user, it means it has been deleted
+		author:=comment.Author.Login
+		if author == "" {
+			author = "deleted_user"
+		}
+		
+		output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
+		fmt.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 		totalComments++
 	}
 	fmt.Printf("Nbr PR Comments: %d\n", len(prQuery2.Repository.PullRequest.Comments.Nodes))
 
 	for i, comment := range prQuery2.Repository.PullRequest.Reviews.Nodes {
-		fmt.Printf("%d. %s %s \"%s\"\n", i+1, comment.Author.Login, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.BodyText))
-		//If there is a single comment for the review, there is no review comment
-		if len(comment.Comments.Nodes) > 1 {
-			output_slice = append(output_slice, createRecord(prSpec, comment.Author.Login, comment.CreatedAt))
+				//When there is no info about the user, it means it has been deleted
+				author:=comment.Author.Login
+				if author == "" {
+					author = "deleted_user"
+				}
+				
+		fmt.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.BodyText))
+		//Just guessing
+		if comment.BodyText!="" {
+			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
 			totalComments++
 		}
 		for ii, comment := range comment.Comments.Nodes {
-			output_slice = append(output_slice, createRecord(prSpec, comment.Author.Login, comment.CreatedAt))
-			fmt.Printf("  %d. %s %s \"%s\"\n", ii+1, comment.Author.Login, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
+							//When there is no info about the user, it means it has been deleted
+							author:=comment.Author.Login
+							if author == "" {
+								author = "deleted_user"
+							}
+							
+			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
+			fmt.Printf("  %d. %s %s \"%s\"\n", ii+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 			totalComments++
 		}
 	}
@@ -163,7 +181,7 @@ func cleanBody(input string) (output string) {
 	re := regexp.MustCompile(`\r?\n`)
 	temp := re.ReplaceAllString(input, " ")
 
-	output = truncateString(temp, 20)
+	output = truncateString(temp, 40)
 	return output
 }
 

@@ -26,6 +26,7 @@ import (
 	"testing"
 )
 
+//https://github.com/on4kjm/flecli/pull/1
 var testResult1 = [][]string{
 	{"on4kjm/flecli/1","jlevesy","2020-07"},
 	{"on4kjm/flecli/1","jmMeessen","2020-07"}, 
@@ -86,6 +87,26 @@ var testResult1 = [][]string{
 	{"on4kjm/flecli/1","jlevesy","2020-07"},	
 }
 
+//https://github.com/jenkinsci/aqua-security-scanner-plugin/pull/51
+var testResult2 = [][]string{
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","rajinikanthj","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","rajinikanthj","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"},
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"}, 
+	{"jenkinsci/aqua-security-scanner-plugin/51","deleted_user","2023-06"},
+}
+
+//https://github.com/jenkins-infra/helm-charts/pull/586
+var testResult3 = [][]string{
+	{"jenkins-infra/helm-charts/586","lemeurherve", "2023-08"},
+	{"jenkins-infra/helm-charts/586","lemeurherve", "2023-08"},
+	{"jenkins-infra/helm-charts/586", "dduportal", "2023-08"},
+}
+
 func Test_fetchComments_alt(t *testing.T) {
 	type args struct {
 		org string
@@ -107,6 +128,26 @@ func Test_fetchComments_alt(t *testing.T) {
 			},
 			57, testResult1,
 		},
+		{
+			"PR with deleted user",
+			args{
+				org: "jenkinsci",
+				prj: "aqua-security-scanner-plugin",
+				pr:  51,
+			},
+			9, testResult2,
+		},
+		// enkins-infra/helm-charts/pull/586
+		{
+			"random PR",
+			args{
+				org: "jenkins-infra",
+				prj: "helm-charts",
+				pr:  586,
+			},
+			3, testResult3,
+		},
+		// unexisting PR
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
