@@ -134,11 +134,11 @@ func fetchComments_alt(org string, prj string, pr int) (nbrComment int, output [
 
 	for i, comment := range prQuery2.Repository.PullRequest.Comments.Nodes {
 		//When there is no info about the user, it means it has been deleted
-		author:=comment.Author.Login
+		author := comment.Author.Login
 		if author == "" {
 			author = "deleted_user"
 		}
-		
+
 		output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
 		fmt.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 		totalComments++
@@ -146,25 +146,25 @@ func fetchComments_alt(org string, prj string, pr int) (nbrComment int, output [
 	fmt.Printf("Nbr PR Comments: %d\n", len(prQuery2.Repository.PullRequest.Comments.Nodes))
 
 	for i, comment := range prQuery2.Repository.PullRequest.Reviews.Nodes {
-				//When there is no info about the user, it means it has been deleted
-				author:=comment.Author.Login
-				if author == "" {
-					author = "deleted_user"
-				}
-				
+		//When there is no info about the user, it means it has been deleted
+		author := comment.Author.Login
+		if author == "" {
+			author = "deleted_user"
+		}
+
 		fmt.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.BodyText))
 		//Just guessing
-		if comment.BodyText!="" {
+		if comment.BodyText != "" {
 			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
 			totalComments++
 		}
 		for ii, comment := range comment.Comments.Nodes {
-							//When there is no info about the user, it means it has been deleted
-							author:=comment.Author.Login
-							if author == "" {
-								author = "deleted_user"
-							}
-							
+			//When there is no info about the user, it means it has been deleted
+			author := comment.Author.Login
+			if author == "" {
+				author = "deleted_user"
+			}
+
 			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
 			fmt.Printf("  %d. %s %s \"%s\"\n", ii+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 			totalComments++
