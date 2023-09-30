@@ -236,8 +236,8 @@ func Test_cleanBody(t *testing.T) {
 		},
 		{
 			"Truncate string",
-			args{input: "aaaa bbbb cccc dddd eeee ffff"},
-			"aaaa bbbb cccc dddd...",
+			args{input: "aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj"},
+			"aaaa bbbb cccc dddd eeee ffff gggg hhhh...",
 		},
 	}
 	for _, tt := range tests {
