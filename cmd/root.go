@@ -28,7 +28,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
 	//See https://github.com/schollz/progressbar
 	"github.com/schollz/progressbar/v3"
@@ -42,7 +41,7 @@ var isVerbose bool
 var isRootDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
-var globalTimeDelay time.Duration
+
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -243,20 +242,6 @@ func performAction(inputFile string) {
 		os.Exit(1)
 	}
 
-	//Try to compute a timeDelay so that we don't exhaust our quota
-	nbrOfPr := len(prList)
-	_, remaining := get_quota_data()
-	time_delay := float64(remaining) / 3600
-	load := float64(nbrOfPr) * 1.2
-	if load < float64(remaining) {
-		globalTimeDelay = 0
-	} else {
-		globalTimeDelay = time.Duration(int64(time_delay)) * time.Millisecond
-	}
-
-	if isRootDebug {
-		loggers.debug.Printf("Load: %.2f, remaining: %d. globalTimeDelay: %d milliSec\n", load, remaining, int64(time_delay))
-	}
 
 	isAppend := globalIsAppend
 	if !globalIsAppend {

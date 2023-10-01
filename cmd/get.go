@@ -76,8 +76,6 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 			fmt.Println("*** Debug mode enabled ***\nSee \"debug.log\" for the trace")
 		}
 
-		globalTimeDelay = 0
-
 		getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
 
 	},
