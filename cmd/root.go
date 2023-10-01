@@ -42,7 +42,6 @@ var isRootDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
 
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "jenkins-get-commenters [PR list CSV]",
@@ -68,14 +67,14 @@ var rootCmd = &cobra.Command{
 		if isRootDebug {
 			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
 
-			limit, remaining := get_quota_data()
+			limit, remaining, _ := get_quota_data_v4()
 			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 		}
 
 		performAction(args[0])
 
 		if isRootDebug {
-			limit, remaining := get_quota_data()
+			limit, remaining, _ := get_quota_data_v4()
 			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
 		}
 	},
@@ -241,7 +240,6 @@ func performAction(inputFile string) {
 		fmt.Printf("Could not load \"%s\"\n", inputFile)
 		os.Exit(1)
 	}
-
 
 	isAppend := globalIsAppend
 	if !globalIsAppend {

@@ -113,18 +113,15 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		fmt.Printf("Fetching comments for %s\n", prSpec)
 	}
 
-	//FIXME: Retrieve the quota figure
+	if isDebugGet {
+		loggers.debug.Printf("Fetching comments for %s\n", prSpec)
+	}
 
 	_, output_data_list := fetchComments_v4(org, prj, pr)
 
 	// Only process if data was found
 	nbrOfComments := len(output_data_list)
 	if nbrOfComments > 0 {
-
-		if isRootDebug {
-			loggers.debug.Printf("For \"%-40s\" found %d comments.\n",
-				prSpec, nbrOfComments)
-		}
 
 		// Creates, overwrites, or opens for append depending on the combination
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
@@ -232,8 +229,6 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 		"pr":    githubv4.Int(pr),
 	}
 
-	//FIXME: write to debug file
-	//FIXME: different debug flag
 	err := client.Query(context.Background(), &prQuery2, variables)
 	if err != nil {
 		log.Printf("ERROR: Unexpected error getting comments: %v\n", err)
@@ -243,10 +238,6 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	prSpec := fmt.Sprintf("%s/%s/%d", org, prj, pr)
 	totalComments := 0
 	dbgDateFormat := "2006-01-02 15:04:05"
-
-	if isRootDebug {
-		loggers.debug.Printf("Quota => call cost: %d,  Remaining: %d\n", prQuery2.RateLimit.Cost, prQuery2.RateLimit.Remaining)
-	}
 
 	var output_slice [][]string
 
@@ -291,9 +282,21 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 
 			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
 			if isDebugGet {
-				loggers.debug.Printf("  %d. %s %s \"%s\"\n", ii+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
+				loggers.debug.Printf("  %d. %s %s \"%s\"\n", ii+1, author,
+					comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
 			}
 			totalComments++
+		}
+	}
+
+	prettyPrinted_prSpec := "\"" + prSpec + "\""
+	if isRootDebug {
+		if totalComments == 0 {
+			loggers.debug.Printf("For %-40s no comment found. (quota cost: %d, remaining: %d)\n",
+				prettyPrinted_prSpec, prQuery2.RateLimit.Cost, prQuery2.RateLimit.Remaining)
+		} else {
+			loggers.debug.Printf("For %-40s found %d comments. (quota cost: %d, remaining: %d)\n",
+				prettyPrinted_prSpec, totalComments, prQuery2.RateLimit.Cost, prQuery2.RateLimit.Remaining)
 		}
 	}
 	if isDebugGet {
