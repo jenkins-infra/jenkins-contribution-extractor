@@ -24,14 +24,16 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"time"
+	"log"
+	"regexp"
+	"unicode"
 
-	// "log"
-	"strconv"
-
-	"github.com/google/go-github/v55/github"
+	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
+
+var isDebugGet bool
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
@@ -66,27 +68,15 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		initLoggers()
-		if isDebug {
+		if isRootDebug || isDebugGet {
 			loggers.debug.Println("******** New debug session ********")
 		}
 
-		if isDebug {
+		if isRootDebug || isDebugGet {
 			fmt.Println("*** Debug mode enabled ***\nSee \"debug.log\" for the trace")
 		}
 
-		if isDebug {
-			limit, remaining := get_quota_data()
-			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
-		}
-
-		globalTimeDelay = 0
-
 		getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
-
-		if isDebug {
-			limit, remaining := get_quota_data()
-			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
-		}
 
 	},
 }
@@ -94,6 +84,13 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 // Cobra initialize
 func init() {
 	rootCmd.AddCommand(getCmd)
+
+	getCmd.PersistentFlags().BoolVarP(&isDebugGet, "debugGet", "", false, "Display debug information (super verbose mode) for the GET command")
+
+	err := getCmd.PersistentFlags().MarkHidden("debugGet")
+	if err != nil {
+		log.Printf("Error hiding debug flag: %v\n", err)
+	}
 
 }
 
@@ -115,48 +112,16 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 	if isVerbose {
 		fmt.Printf("Fetching comments for %s\n", prSpec)
 	}
-	// ------
-	// Retrieving all comments for the given PR from GitHub
-	comments, err := fetchComments(org, prj, pr)
-	if err != nil {
-		if !isVerbose {
-			fmt.Printf("Fetching comments for %s\n", prSpec)
-		}
-		fmt.Printf("Error: %v\n   Skipping....\n", err)
-		return 0
-	}
-	// Load the collected comment data in the output data structure
-	output_comment_list := load_issueComments(org, prj, strconv.Itoa(pr), comments)
 
-	// ------
-	// Retrieving all review comments for the given PR from GitHub
-	review_comments, err := fetchReviews(org, prj, pr)
-	if err != nil {
-		if !isVerbose {
-			fmt.Printf("Fetching review comments for %s\n", prSpec)
-		}
-		fmt.Printf("Error: %v\n   Skipping....\n", err)
-		return 0
+	if isDebugGet {
+		loggers.debug.Printf("Fetching comments for %s\n", prSpec)
 	}
-	// Load the collected comment data in the output data structure
-	output_review_list := load_reviewComments(org, prj, strconv.Itoa(pr), review_comments)
 
-	// Assemble the two lists
-	output_data_list := append(output_comment_list, output_review_list...)
+	_, output_data_list := fetchComments_v4(org, prj, pr)
 
 	// Only process if data was found
 	nbrOfComments := len(output_data_list)
 	if nbrOfComments > 0 {
-
-		if isVerbose {
-			fmt.Printf("   Found %d comments (%d review comments and %d general comments).\n",
-				nbrOfComments, len(output_review_list), len(output_comment_list))
-		}
-
-		if isDebug {
-			loggers.debug.Printf("For \"%-40s\" found %d comments (%d review comments and %d general comments).\n",
-				prSpec, nbrOfComments, len(output_review_list), len(output_comment_list))
-		}
 
 		// Creates, overwrites, or opens for append depending on the combination
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
@@ -172,119 +137,206 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 	return nbrOfComments
 }
 
-// Get the comment data from GitHub.
-func fetchComments(org string, project string, pr_nbr int) ([]*github.IssueComment, error) {
+/*
+{
+  repository(name: "flecli", owner: "on4kjm") {
+    pullRequest(number: 1) {
+      reviews(first: 100) {
+        nodes {
+          bodyText
+          createdAt
+          author {
+            login
+          }
+          comments(first: 100) {
+            nodes {
+              author {
+                login
+              }
+              body
+            }
+          }
+        }
+      }
+      comments(first: 100) {
+        nodes {
+          author {
+            login
+          }
+          createdAt
+          body
+        }
+        totalCount
+      }
+    }
+  }
+}
+*/
 
+var prQuery2 struct {
+	Repository struct {
+		Description string
+		PullRequest struct {
+			Title    string
+			Comments struct {
+				Nodes []struct {
+					CreatedAt githubv4.DateTime
+					Body      string
+					Author    struct {
+						Login string
+					}
+				}
+			} `graphql:"comments(first: 100)"`
+			Reviews struct {
+				Nodes []struct {
+					CreatedAt githubv4.DateTime
+					BodyText  string
+					Author    struct {
+						Login string
+					}
+					Comments struct {
+						Nodes []struct {
+							CreatedAt githubv4.DateTime
+							Body      string
+							Author    struct {
+								Login string
+							}
+						}
+					} `graphql:"comments(first: 100)"`
+				}
+			} `graphql:"reviews(first: 100)"`
+		} `graphql:"pullRequest(number: $pr)"`
+	} `graphql:"repository(owner: $owner, name: $name)"`
+	RateLimit struct {
+		Cost      int
+		Remaining int
+	}
+}
+
+func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output [][]string) {
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
 	ghToken := loadGitHubToken(ghTokenVar)
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: ghToken},
+	)
+	httpClient := oauth2.NewClient(context.Background(), src)
+	client := githubv4.NewClient(httpClient)
 
-	client := github.NewClient(nil).WithAuthToken(ghToken)
-
-	var allComments []*github.IssueComment
-	opt := &github.IssueListCommentsOptions{
-		ListOptions: github.ListOptions{PerPage: 10},
+	variables := map[string]interface{}{
+		"owner": githubv4.String(org),
+		"name":  githubv4.String(prj),
+		"pr":    githubv4.Int(pr),
 	}
 
-	for {
-		comments, resp, err := client.Issues.ListComments(context.Background(), org, project, pr_nbr, opt)
-		if err != nil {
-			return nil, err
-		}
-		allComments = append(allComments, comments...)
-		if resp.NextPage == 0 {
-			break
-		}
-		opt.Page = resp.NextPage
-
-		// Add a delay (if necessary) so that we don't blow our quota
-		time.Sleep(globalTimeDelay)
+	err := client.Query(context.Background(), &prQuery2, variables)
+	if err != nil {
+		log.Printf("ERROR: Unexpected error getting comments: %v\n", err)
+		return 0, nil
 	}
 
-	return allComments, nil
-}
+	prSpec := fmt.Sprintf("%s/%s/%d", org, prj, pr)
+	totalComments := 0
+	dbgDateFormat := "2006-01-02 15:04:05"
 
-// Load the collected comment data in the output data structure
-// TODO: create a test
-func load_issueComments(org string, prj string, pr_number string, comments []*github.IssueComment) [][]string {
 	var output_slice [][]string
-	for _, comment := range comments {
-		var output_record []string
 
-		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
-
-		commenter := ""
-		if comment.GetUser() == nil {
-			commenter = "deleted_user"
-		} else {
-			commenter = *comment.GetUser().Login
+	for i, comment := range prQuery2.Repository.PullRequest.Comments.Nodes {
+		//When there is no info about the user, it means it has been deleted
+		author := comment.Author.Login
+		if author == "" {
+			author = "deleted_user"
 		}
 
-		timestamp := comment.GetCreatedAt().String()
-		month := timestamp[0:7]
-
-		// create record
-		output_record = append(output_record, pr_ref, commenter, month)
-
-		//append the record to the list we are building
-		output_slice = append(output_slice, output_record)
+		output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
+		if isDebugGet {
+			loggers.debug.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
+		}
+		totalComments++
+	}
+	if isDebugGet {
+		loggers.debug.Printf("Nbr PR Comments: %d\n", len(prQuery2.Repository.PullRequest.Comments.Nodes))
 	}
 
-	return output_slice
+	for i, comment := range prQuery2.Repository.PullRequest.Reviews.Nodes {
+		//When there is no info about the user, it means it has been deleted
+		author := comment.Author.Login
+		if author == "" {
+			author = "deleted_user"
+		}
+
+		if isDebugGet {
+			loggers.debug.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.BodyText))
+		}
+		//Just guessing correct counting
+		if comment.BodyText != "" {
+			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
+			totalComments++
+		}
+		for ii, comment := range comment.Comments.Nodes {
+			//When there is no info about the user, it means it has been deleted
+			author := comment.Author.Login
+			if author == "" {
+				author = "deleted_user"
+			}
+
+			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
+			if isDebugGet {
+				loggers.debug.Printf("  %d. %s %s \"%s\"\n", ii+1, author,
+					comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.Body))
+			}
+			totalComments++
+		}
+	}
+
+	prettyPrinted_prSpec := "\"" + prSpec + "\""
+	if isRootDebug {
+		if totalComments == 0 {
+			loggers.debug.Printf("For %-40s no comment found. (quota cost: %d, remaining: %d)\n",
+				prettyPrinted_prSpec, prQuery2.RateLimit.Cost, prQuery2.RateLimit.Remaining)
+		} else {
+			loggers.debug.Printf("For %-40s found %d comments. (quota cost: %d, remaining: %d)\n",
+				prettyPrinted_prSpec, totalComments, prQuery2.RateLimit.Cost, prQuery2.RateLimit.Remaining)
+		}
+	}
+	if isDebugGet {
+		loggers.debug.Printf("Nbr PR Reviews: %d\n", len(prQuery2.Repository.PullRequest.Reviews.Nodes))
+		loggers.debug.Printf("Grand total de reviews: %d\n", totalComments)
+	}
+	return totalComments, output_slice
 }
 
-// Get the reviews data from GitHub.
-func fetchReviews(org string, project string, pr_nbr int) ([]*github.PullRequestReview, error) {
+// Removes and truncates a Body or BodyText element
+func cleanBody(input string) (output string) {
+	re := regexp.MustCompile(`\r?\n`)
+	temp := re.ReplaceAllString(input, " ")
 
-	// retrieve the token value from the specified environment variable
-	// ghTokenVar is global and set by the CLI parser
-	ghToken := loadGitHubToken(ghTokenVar)
-
-	client := github.NewClient(nil).WithAuthToken(ghToken)
-
-	var allComments []*github.PullRequestReview
-	opt := &github.ListOptions{PerPage: 10}
-
-	for {
-		comments, resp, err := client.PullRequests.ListReviews(context.Background(), org, project, pr_nbr, opt)
-		if err != nil {
-			return nil, err
-		}
-		allComments = append(allComments, comments...)
-		if resp.NextPage == 0 {
-			break
-		}
-		opt.Page = resp.NextPage
-	}
-
-	return allComments, nil
+	output = truncateString(temp, 40)
+	return output
 }
 
-// Load the collected comment data in the output data structure
-// TODO: create a test
-func load_reviewComments(org string, prj string, pr_number string, reviews []*github.PullRequestReview) [][]string {
-	var output_slice [][]string
-	for _, comment := range reviews {
-		var output_record []string
-
-		pr_ref := fmt.Sprintf("%s/%s/%s", org, prj, pr_number)
-
-		commenter := ""
-		if comment.GetUser() == nil {
-			commenter = "deleted_account"
-		} else {
-			commenter = *comment.GetUser().Login
+func truncateString(input string, max int) (otput string) {
+	lastSpaceIx := -1
+	len := 0
+	for i, r := range input {
+		if unicode.IsSpace(r) {
+			lastSpaceIx = i
 		}
-
-		timestamp := comment.GetSubmittedAt().String()
-		month := timestamp[0:7]
-
-		// create record
-		output_record = append(output_record, pr_ref, commenter, month)
-
-		//append the record to the list we are building
-		output_slice = append(output_slice, output_record)
+		len++
+		if len >= max {
+			if lastSpaceIx != -1 {
+				return input[:lastSpaceIx] + "..."
+			}
+			// If here, string is longer than max, but has no spaces
+		}
 	}
+	// If here, string is shorter than max
+	return input
+}
 
-	return output_slice
+func createRecord(prSpec string, user string, date githubv4.DateTime) []string {
+	var output_record []string
+	monthFormat := "2006-01"
+	output_record = append(output_record, prSpec, user, date.Format(monthFormat))
+	return output_record
 }

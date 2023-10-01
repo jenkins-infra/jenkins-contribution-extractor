@@ -21,7 +21,9 @@ THE SOFTWARE.
 */
 package cmd
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_get_quota(t *testing.T) {
 	tests := []struct {
@@ -34,6 +36,19 @@ func Test_get_quota(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			get_quota()
+		})
+	}
+}
+
+func Test_get_quota_data_v4(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		{"Happy case"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			get_quota_data_v4()
 		})
 	}
 }
