@@ -39,7 +39,7 @@ import (
 var outputFileName string
 var ghTokenVar string
 var isVerbose bool
-var isDebug bool
+var isRootDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
 var globalTimeDelay time.Duration
@@ -62,11 +62,11 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Debug flag is hidden
 		initLoggers()
-		if isDebug {
+		if isRootDebug {
 			loggers.debug.Println("******** New debug session ********")
 		}
 
-		if isDebug {
+		if isRootDebug {
 			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
 
 			limit, remaining := get_quota_data()
@@ -75,7 +75,7 @@ var rootCmd = &cobra.Command{
 
 		performAction(args[0])
 
-		if isDebug {
+		if isRootDebug {
 			limit, remaining := get_quota_data()
 			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
 		}
@@ -98,7 +98,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&globalIsAppend, "append", "a", false, "Appends data to existing output file.")
 	rootCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
 	rootCmd.PersistentFlags().BoolVarP(&isVerbose, "verbose", "v", false, "Displays useful info during the extraction.")
-	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "", false, "Display debug information (super verbose mode)")
+
+	rootCmd.PersistentFlags().BoolVarP(&isRootDebug, "debug", "", false, "Display debug information (super verbose mode)")
 
 	//Disable the Cobra completion options
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -231,7 +232,7 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 func performAction(inputFile string) {
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
-	if isDebug {
+	if isRootDebug {
 		loggers.debug.Printf("Processing \"%s\"\n", inputFile)
 	}
 
@@ -253,7 +254,7 @@ func performAction(inputFile string) {
 		globalTimeDelay = time.Duration(int64(time_delay)) * time.Millisecond
 	}
 
-	if isDebug {
+	if isRootDebug {
 		loggers.debug.Printf("Load: %.2f, remaining: %d. globalTimeDelay: %d milliSec\n", load, remaining, int64(time_delay))
 	}
 
@@ -298,7 +299,7 @@ func performAction(inputFile string) {
 	fmt.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
 	fmt.Printf("Total comments:             %d\n", totalComments)
 
-	if isDebug {
+	if isRootDebug {
 		loggers.debug.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
 		loggers.debug.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
 		loggers.debug.Printf("Total comments:             %d\n", totalComments)
