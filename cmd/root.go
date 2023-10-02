@@ -28,6 +28,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	//See https://github.com/schollz/progressbar
 	"github.com/schollz/progressbar/v3"
@@ -62,21 +63,11 @@ var rootCmd = &cobra.Command{
 		initLoggers()
 		if isRootDebug {
 			loggers.debug.Println("******** New debug session ********")
-		}
-
-		if isRootDebug {
 			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
-
-			limit, remaining, _ := get_quota_data_v4()
-			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 		}
 
 		performAction(args[0])
 
-		if isRootDebug {
-			limit, remaining, _ := get_quota_data_v4()
-			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
-		}
 	},
 }
 
@@ -226,8 +217,14 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 	return true
 }
 
+//*************
 // This is where it happens
+//*************
 func performAction(inputFile string) {
+	if isRootDebug {
+		limit, remaining, _ := get_quota_data_v4()
+		loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
+	}
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
 	if isRootDebug {
@@ -283,6 +280,13 @@ func performAction(inputFile string) {
 	fmt.Printf("Total comments:             %d\n", totalComments)
 
 	if isRootDebug {
+		limit, remaining, reset_time := get_quota_data_v4()
+		now := time.Now()
+		diff := reset_time.Sub(now)
+		secondsToGo := diff.Seconds()
+		resetTimeString := reset_time.Format(time.RFC1123)
+		loggers.debug.Printf("End quota: %d/%d  %s (in %f)\n", remaining, limit, resetTimeString, secondsToGo)
+
 		loggers.debug.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
 		loggers.debug.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
 		loggers.debug.Printf("Total comments:             %d\n", totalComments)

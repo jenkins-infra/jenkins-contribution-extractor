@@ -68,8 +68,14 @@ func get_quota() {
 	limit, remaining := get_quota_data()
 	fmt.Printf("V3 Limit: %d \nV3 Remaining %d \n\n", limit, remaining)
 
-	limit_v4, remaining_v4, _ := get_quota_data_v4()
-	fmt.Printf("V4 Limit: %d \nV4 Remaining %d \n", limit_v4, remaining_v4)
+	limit_v4, remaining_v4, reset_time := get_quota_data_v4()
+	resetTimeString := reset_time.Format(time.RFC1123)
+	now := time.Now()
+	diff := reset_time.Sub(now)
+	secondsToGo := diff.Seconds()
+	
+
+	fmt.Printf("V4 Limit: %d \nV4 Remaining: %d \nV4 Reset time: %s (in %.0f secs)\n", limit_v4, remaining_v4,resetTimeString,secondsToGo)
 }
 
 // Retrieves the GitHub Quota.
