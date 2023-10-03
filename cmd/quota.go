@@ -31,6 +31,9 @@ import (
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+
+	//See https://github.com/schollz/progressbar
+	"github.com/schollz/progressbar/v3"
 )
 
 // quotaCmd represents the quota command
@@ -68,14 +71,9 @@ func get_quota() {
 	limit, remaining := get_quota_data()
 	fmt.Printf("V3 Limit: %d \nV3 Remaining %d \n\n", limit, remaining)
 
-	limit_v4, remaining_v4, reset_time := get_quota_data_v4()
-	resetTimeString := reset_time.Format(time.RFC1123)
-	now := time.Now()
-	diff := reset_time.Sub(now)
-	secondsToGo := diff.Seconds()
-	
+	limit_v4, remaining_v4, resetTimeString, secondsToGo := get_quota_data_v4()
 
-	fmt.Printf("V4 Limit: %d \nV4 Remaining: %d \nV4 Reset time: %s (in %.0f secs)\n", limit_v4, remaining_v4,resetTimeString,secondsToGo)
+	fmt.Printf("V4 Limit: %d \nV4 Remaining: %d \nV4 Reset time: %s (in %d secs)\n", limit_v4, remaining_v4, resetTimeString, secondsToGo)
 }
 
 // Retrieves the GitHub Quota.
@@ -120,7 +118,7 @@ var quotaQuery struct {
 	}
 }
 
-func get_quota_data_v4() (limit int, remaining int, resetAt time.Time) {
+func get_quota_data_v4() (limit int, remaining int, resetAt string, secondsToReset int) {
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
 	ghToken := loadGitHubToken(ghTokenVar)
@@ -136,10 +134,70 @@ func get_quota_data_v4() (limit int, remaining int, resetAt time.Time) {
 		log.Panic(err)
 	}
 
-	// fmt.Printf("User: %s\n", quotaQuery.Viewer.Login)
-	// fmt.Printf("limit:     %d\n", quotaQuery.RateLimit.Limit)
-	// fmt.Printf("cost:      %d\n", quotaQuery.RateLimit.Cost)
-	// fmt.Printf("remaining: %d\n", quotaQuery.RateLimit.Remaining)
-	// fmt.Printf("resetAt:   %s\n", quotaQuery.RateLimit.ResetAt)
-	return quotaQuery.RateLimit.Limit, quotaQuery.RateLimit.Remaining, quotaQuery.RateLimit.ResetAt
+	// pretty print the reset time (UTC)
+	reset_time := quotaQuery.RateLimit.ResetAt
+	resetTimeString := reset_time.Format(time.RFC1123)
+
+	// compute how many seconds are before reset
+	now := time.Now()
+	diff := reset_time.Sub(now)
+	secondsToGo := int(diff.Seconds())
+
+	return quotaQuery.RateLimit.Limit, quotaQuery.RateLimit.Remaining, resetTimeString, secondsToGo
 }
+
+// Get's the V4 quota, checks whether there is enough quota. If not will wait for the reset
+func checkIfSufficientQuota(expectedLoad int) {
+	// initialize we  are called outside the normal flow
+	initLoggers()
+
+	limit, remaining, resetAt, secondsToReset := get_quota_data_v4()
+	if isRootDebug || isDebugGet {
+	loggers.debug.Printf("Quota: %d/%d (%d secs -> %s\n", remaining, limit, secondsToReset, resetAt)
+	loggers.debug.Printf("Requesting to process %d\n",expectedLoad)
+	}
+	if(expectedLoad >= limit) {
+		if isRootDebug || isDebugGet {
+		loggers.debug.Printf("Expected load (%d) is higher then limit (%d)\n",expectedLoad,limit)
+		}
+		fmt.Printf("Expected load (%d) is higher then limit (%d)\n Crossing fingers and continuing...\n",expectedLoad,limit)
+		return
+	}
+
+	if (expectedLoad + 20) > remaining {
+		//Not enough resources, we need to wait
+		waitForReset(secondsToReset)
+	}
+	// Else we do nothing as we are good to go.
+}
+
+// Wait for a certain number of seconds
+func waitForReset(secondsToReset int) {
+	//TODO: check input value
+
+	bar := progressbar.NewOptions(secondsToReset,
+		progressbar.OptionShowBytes(false),
+		progressbar.OptionSetDescription("Waiting for quota reset   "),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionShowBytes(false),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionShowCount(),
+		progressbar.OptionClearOnFinish(),
+	)
+
+	for i := 0; i < secondsToReset; i++ {
+		err := bar.Add(1)
+		if err != nil {
+			log.Printf("Unexpected error updating progress bar (%v)\n", err)
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	// Clear the progress bar
+	bar.Reset()
+	err := bar.Finish()
+	if err != nil {
+		log.Printf("Unexpected error clearing progress bar (%v)\n", err)
+	}
+}
+

@@ -223,6 +223,9 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
 
+	//Check whether we have enough  quota left and wait if necessary
+	checkIfSufficientQuota(2)
+
 	variables := map[string]interface{}{
 		"owner": githubv4.String(org),
 		"name":  githubv4.String(prj),
