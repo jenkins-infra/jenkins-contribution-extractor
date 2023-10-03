@@ -41,6 +41,7 @@ var isVerbose bool
 var isRootDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
+var globalIsBigFile bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -58,25 +59,15 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		// Debug flag is hidden
+		// Debug flag is hidden ("--debug" for root)
 		initLoggers()
 		if isRootDebug {
 			loggers.debug.Println("******** New debug session ********")
-		}
-
-		if isRootDebug {
 			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
-
-			limit, remaining, _ := get_quota_data_v4()
-			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 		}
 
 		performAction(args[0])
 
-		if isRootDebug {
-			limit, remaining, _ := get_quota_data_v4()
-			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
-		}
 	},
 }
 
@@ -226,8 +217,14 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 	return true
 }
 
+// *************
 // This is where it happens
+// *************
 func performAction(inputFile string) {
+	if isRootDebug {
+		limit, remaining, _, _ := get_quota_data_v4()
+		loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
+	}
 
 	fmt.Printf("Processing \"%s\"\n", inputFile)
 	if isRootDebug {
@@ -240,6 +237,9 @@ func performAction(inputFile string) {
 		fmt.Printf("Could not load \"%s\"\n", inputFile)
 		os.Exit(1)
 	}
+
+	//Check whether we have enough  quota left and wait if necessary
+	checkIfSufficientQuota(len(prList))
 
 	isAppend := globalIsAppend
 	if !globalIsAppend {
@@ -283,6 +283,9 @@ func performAction(inputFile string) {
 	fmt.Printf("Total comments:             %d\n", totalComments)
 
 	if isRootDebug {
+		limit, remaining, resetTimeString, secondsToGo := get_quota_data_v4()
+		loggers.debug.Printf("End quota: %d/%d  %s (in %d)\n", remaining, limit, resetTimeString, secondsToGo)
+
 		loggers.debug.Printf("Nbr of PR without comments: %d\n", nbrPR_noComment)
 		loggers.debug.Printf("Nbr of PR with comments:    %d\n", nbrPR_withComments)
 		loggers.debug.Printf("Total comments:             %d\n", totalComments)
