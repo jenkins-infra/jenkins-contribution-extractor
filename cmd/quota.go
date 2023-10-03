@@ -153,14 +153,18 @@ func checkIfSufficientQuota(expectedLoad int) {
 
 	limit, remaining, resetAt, secondsToReset := get_quota_data_v4()
 	if isRootDebug || isDebugGet {
-	loggers.debug.Printf("Quota: %d/%d (%d secs -> %s\n", remaining, limit, secondsToReset, resetAt)
-	loggers.debug.Printf("Requesting to process %d\n",expectedLoad)
+		loggers.debug.Printf("Quota: %d/%d (%d secs -> %s\n", remaining, limit, secondsToReset, resetAt)
+		loggers.debug.Printf("Requesting to process %d\n", expectedLoad)
 	}
-	if(expectedLoad >= limit) {
+
+	globalIsBigFile = false
+
+	if expectedLoad >= limit {
 		if isRootDebug || isDebugGet {
-		loggers.debug.Printf("Expected load (%d) is higher then limit (%d)\n",expectedLoad,limit)
+			loggers.debug.Printf("Expected load (%d) is higher then limit (%d)\n", expectedLoad, limit)
 		}
-		fmt.Printf("Expected load (%d) is higher then limit (%d)\n Crossing fingers and continuing...\n",expectedLoad,limit)
+		fmt.Printf("Expected load (%d) is higher then limit (%d)\n Crossing fingers and continuing...\n", expectedLoad, limit)
+		globalIsBigFile = true
 		return
 	}
 
@@ -200,4 +204,3 @@ func waitForReset(secondsToReset int) {
 		log.Printf("Unexpected error clearing progress bar (%v)\n", err)
 	}
 }
-

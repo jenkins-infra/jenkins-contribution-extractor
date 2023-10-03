@@ -41,6 +41,7 @@ var isVerbose bool
 var isRootDebug bool
 var globalIsAppend bool
 var globalIsNoHeader bool
+var globalIsBigFile bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

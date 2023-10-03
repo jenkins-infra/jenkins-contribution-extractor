@@ -224,7 +224,10 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	client := githubv4.NewClient(httpClient)
 
 	//Check whether we have enough  quota left and wait if necessary
-	checkIfSufficientQuota(2)
+	// only if we are dealing with a PR list file bigger than the quota limit.
+	if globalIsBigFile {
+		checkIfSufficientQuota(2)
+	}
 
 	variables := map[string]interface{}{
 		"owner": githubv4.String(org),
