@@ -27,10 +27,10 @@ test-coverage: ## Run tests with coverage
 
 build:  ## Build the binary file
 	@goreleaser --snapshot --skip=publish --clean
-	@cp dist/jenkins-get-commenters_darwin_amd64_v1/jenkins-get-commenters .
+	@cp dist/jenkins-stats_darwin_amd64_v1/jenkins-stats .
  
 clean: ## Remove previous build
-	@rm -f ./jenkins-get-commenters
+	@rm -f ./jenkins-stats
 	@rm -f ./rm top-submitters_*.csv
 	@rm -f ./cover.out
 	@rm -f ./coverage.txt

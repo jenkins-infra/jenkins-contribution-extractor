@@ -18,3 +18,19 @@
             - `--project` : project
             - `--pr` : Pull Request Reference
             - `--full_ref` : combination of above as "org/project/pr"
+
+## New interface
+
+**`jenkins-stats`**
+    - **version**
+        - -d : detailed
+    - **quota**
+    - **get**
+        - **commenters**
+            -- debug
+            - **for_pr**
+                --debug
+        - **pr**
+            org
+            mois
+    - **test**

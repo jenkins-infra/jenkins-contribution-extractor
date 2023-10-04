@@ -1,4 +1,4 @@
-module github.com/jmMeessen/jenkins-get-commenters
+module github.com/jmMeessen/jenkins-stats
 
 go 1.21.1
 
