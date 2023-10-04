@@ -1,5 +1,3 @@
-package cmd
-
 /*
 Copyright © 2023 Jean-Marc Meessen jean-marc@meessen-web.org
 
@@ -21,46 +19,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+package cmd
 
 import (
 	"fmt"
+
 	"github.com/spf13/cobra"
-	"time"
 )
 
-var (
-	detailed   = false
-	version    = "private build"
-	commit     = "none"
-	date       = "unknown"
-	builtBy    = ""
-	versionCmd = &cobra.Command{
-		Use:   "version",
-		Short: "Displays the version and build information",
-		Long:  ``,
-		Run: func(_ *cobra.Command, _ []string) {
-			var response string
-			if detailed {
-				prettyPrintedDate := "Unknown"
-				if date != "unknown" {
-					buildDate, error := time.Parse(time.RFC3339, date)
-					if error == nil {
-						prettyPrintedDate = buildDate.Format("2006-01-02 15:04") + " (UTC)"
-					} else {
-						prettyPrintedDate = fmt.Sprint(error)
-					}
-				}
-				response = fmt.Sprintf("jenkins-stats :\n- version:  %s\n- commit:   %s\n- date:     %s\n- built by: %s\n", version, commit, prettyPrintedDate, builtBy)
-			} else {
-				response = fmt.Sprintf("jenkins-stats version: %s\n", version)
-			}
+// prCmd represents the pr command
+var prCmd = &cobra.Command{
+	Use:   "pr",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
 
-			fmt.Printf("%+v", response)
-		},
-	}
-)
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("pr called")
+	},
+}
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVarP(&detailed, "detailed", "d", false, "Prints the detailed version information")
+	getCmd.AddCommand(prCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// prCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// prCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
