@@ -31,6 +31,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+//TODO: better variable name
+var isDebugGet bool
+
 // forPrCmd represents the forPr command
 var forPrCmd = &cobra.Command{
 	Use:   "forPr [PR Spec]",
@@ -78,15 +81,15 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 func init() {
 	commentersCmd.AddCommand(forPrCmd)
 
-	// Here you will define your flags and configuration settings.
+	getCmd.PersistentFlags().BoolVarP(&isDebugGet, "debugGet", "", false, "Display debug information (super verbose mode) for the GET command")
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// forPrCmd.PersistentFlags().String("foo", "", "A help for foo")
+	err := getCmd.PersistentFlags().MarkHidden("debugGet")
+	if err != nil {
+		log.Printf("Error hiding debug flag: %v\n", err)
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// forPrCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+
 }
 
 //**********

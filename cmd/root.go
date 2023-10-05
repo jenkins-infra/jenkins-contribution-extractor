@@ -61,8 +61,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&ghTokenVar, "token_var", "t", "GITHUB_TOKEN", "The environment variable containing the GitHub token.")
 	rootCmd.PersistentFlags().BoolVarP(&isVerbose, "verbose", "v", false, "Displays useful info during the extraction.")
 
-	rootCmd.PersistentFlags().BoolVarP(&isRootDebug, "debug", "", false, "Display debug information (super verbose mode)")
-
 	//Disable the Cobra completion options
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 

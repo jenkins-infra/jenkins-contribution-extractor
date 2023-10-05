@@ -22,12 +22,11 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"log"
 
 	"github.com/spf13/cobra"
 )
 
-var isDebugGet bool
+
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
@@ -45,12 +44,8 @@ func init() {
 	getCmd.PersistentFlags().BoolVarP(&globalIsAppend, "append", "a", false, "Appends data to existing output file.")
 	getCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
 
+	rootCmd.PersistentFlags().BoolVarP(&isRootDebug, "debug", "", false, "Display debug information (super verbose mode)")
 
-	getCmd.PersistentFlags().BoolVarP(&isDebugGet, "debugGet", "", false, "Display debug information (super verbose mode) for the GET command")
 
-	err := getCmd.PersistentFlags().MarkHidden("debugGet")
-	if err != nil {
-		log.Printf("Error hiding debug flag: %v\n", err)
-	}
 
 }

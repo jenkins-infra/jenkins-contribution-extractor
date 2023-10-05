@@ -22,47 +22,144 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"time"
 
+	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 // prCmd represents the pr command
 var prCmd = &cobra.Command{
 	Use:   "submitters org year month",
-	Short: "A brief description of your command",
-	Long: `This command will get the list of comments
-	(author and month) from GitHub for a given PR . 
-	
-	The PR is specified as "organization/project/PR number".
-	
-	The output is a CVS file, specified with the "-o"/"--out" parameter. If not
-	defined it will take the default output filename.
-	Each record of the output contains the following information:
-	- PR specification
-	- Commenter's login name
-	- The month the comment was created (YYYY-MM)
-	
-	The behavior can be controlled with various flags, such as appending to an existing
-	output file or overwriting it, header of no-header.
-	
-	This query requires authenticated API call. The GitHub Token (Personal Access Token) is
-	retrieved from an environment variable (default is "GITHUB_TOKEN" but can be overridden with a flag)`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("pr called")
+	Short: "Get all PRs (and their submitters) for a given month and org.",
+	Long: `Get all PRs (and their submitters) for a given month and org.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err:=performTest()
+		if err != nil {
+			return err
+		}
+		return nil
 	},
 }
+
+//TODO: get the parameter "ORG YYYY-MM"
 
 func init() {
 	getCmd.AddCommand(prCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// prCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// prCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
+
+
+func performTest() error {
+	initLoggers()
+
+	ghToken := loadGitHubToken(ghTokenVar)
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: ghToken},
+	)
+	httpClient := oauth2.NewClient(context.Background(), src)
+	client := githubv4.NewClient(httpClient)
+
+	{
+		var prQuery struct {
+			Viewer struct {
+				Login string
+			}
+			RateLimit struct {
+				Limit     int
+				Cost      int
+				Remaining int
+				ResetAt   time.Time
+			}
+			Search struct {
+				IssueCount int
+				Edges      []struct {
+					Node struct {
+						PullRequest struct {
+							Author struct {
+								Login string
+							}
+							CreatedAt time.Time
+							ClosedAt  time.Time
+							Url       string
+							Number    int
+						} `graphql:"... on PullRequest"`
+					}
+				}
+				PageInfo struct {
+					EndCursor   githubv4.String
+					HasNextPage bool
+				}
+			} `graphql:"search(first: $count, after: $pullRequestCursor, query: $searchQuery, type: ISSUE)"`
+		}
+
+		variables := map[string]interface{}{
+			"searchQuery":       githubv4.String(fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:2023-09-01..2023-09-30`, githubv4.String("jenkinsci"))),
+			"count":             githubv4.Int(100),
+			"pullRequestCursor": (*githubv4.String)(nil), // Null after argument to get first page.
+		}
+
+		//TODO: write header
+		//TODO: write CSV
+
+		i := 0
+		for {
+			err := client.Query(context.Background(), &prQuery, variables)
+			if err != nil {
+				return (err)
+			}
+
+			totalIssues := prQuery.Search.IssueCount
+			for ii, singlePr := range prQuery.Search.Edges {
+				fmt.Printf("%d-%d (%d/%d)  %s %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
+			}
+
+			if !prQuery.Search.PageInfo.HasNextPage {
+				break
+			}
+			variables["pullRequestCursor"] = githubv4.NewString(prQuery.Search.PageInfo.EndCursor)
+			i++
+		}
+		// printJSON(prQuery)
+	}
+	return nil
+}
+
+//GitHub Graphql query
+// {
+// 	rateLimit {
+// 	  limit
+// 	  cost
+// 	  remaining
+// 	  resetAt
+// 	}
+// 	search(
+// 	  query: "org:jenkinsci is:pr -author:app/dependabot -author:app/renovate -author:jenkins-infra-bot created:2023-09-01..2023-09-30"
+// 	  type: ISSUE
+// 	  first: 100
+// 	) {
+// 	  issueCount
+// 	  pageInfo {
+// 		endCursor
+// 		hasNextPage
+// 	  }
+// 	  edges {
+// 		node {
+// 		  ... on PullRequest {
+// 			author {
+// 			  login
+// 			}
+// 			createdAt
+// 			closedAt
+// 			url
+// 			number
+// 		  }
+// 		}
+// 	  }
+// 	}
+//   }
+
+
