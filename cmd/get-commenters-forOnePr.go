@@ -89,7 +89,6 @@ func init() {
 	// forPrCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-
 //**********
 // This is where it starts and the magic happens
 //**********

@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-
 	"log"
 
 	"github.com/spf13/cobra"
@@ -36,7 +35,6 @@ var getCmd = &cobra.Command{
 	Short: "Retrieves data from GitHub (PRs or Commenters)",
 	Long: `Long description
 `,
-
 }
 
 // Cobra initialize
@@ -51,4 +49,3 @@ func init() {
 	}
 
 }
-
