@@ -23,3 +23,5 @@ Limit: 5000
 Remaining 4068 
 ➜  jenkins-get-commenters git:(quota) ✗ 
 ```
+
+https://umarcor.github.io/cobra/#generating-markdown-docs-for-your-own-cobracommand

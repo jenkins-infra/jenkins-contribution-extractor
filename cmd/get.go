@@ -41,6 +41,11 @@ var getCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(getCmd)
 
+	getCmd.PersistentFlags().StringVarP(&outputFileName, "out", "o", "jenkins_commenters_data.csv", "Output file name.")
+	getCmd.PersistentFlags().BoolVarP(&globalIsAppend, "append", "a", false, "Appends data to existing output file.")
+	getCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
+
+
 	getCmd.PersistentFlags().BoolVarP(&isDebugGet, "debugGet", "", false, "Display debug information (super verbose mode) for the GET command")
 
 	err := getCmd.PersistentFlags().MarkHidden("debugGet")
