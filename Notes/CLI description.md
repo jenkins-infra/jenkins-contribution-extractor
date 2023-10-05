@@ -21,14 +21,15 @@
 
 ## New interface
 
-**`jenkins-stats`**
+### **`jenkins-stats`**
+- **root** (displays help)
     - **version**
         - -d : detailed
     - **quota**
     - **get**
         - **commenters**
             -- debug
-            - **for_pr**
+            - **for_pr** \[pr_spec\]
                 --debug
         - **pr**
             org

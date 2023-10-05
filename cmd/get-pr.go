@@ -31,12 +31,23 @@ import (
 var prCmd = &cobra.Command{
 	Use:   "pr",
 	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `This command will get the list of comments
+	(author and month) from GitHub for a given PR . 
+	
+	The PR is specified as "organization/project/PR number".
+	
+	The output is a CVS file, specified with the "-o"/"--out" parameter. If not
+	defined it will take the default output filename.
+	Each record of the output contains the following information:
+	- PR specification
+	- Commenter's login name
+	- The month the comment was created (YYYY-MM)
+	
+	The behavior can be controlled with various flags, such as appending to an existing
+	output file or overwriting it, header of no-header.
+	
+	This query requires authenticated API call. The GitHub Token (Personal Access Token) is
+	retrieved from an environment variable (default is "GITHUB_TOKEN" but can be overridden with a flag)`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("pr called")
 	},

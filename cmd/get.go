@@ -25,8 +25,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
-	"unicode"
+
 
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
@@ -37,8 +36,8 @@ var isDebugGet bool
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
-	Use:   "get [PR Specification]",
-	Short: "Retrieves the commenter data, given a PR specification",
+	Use:   "get commenters|pr",
+	Short: "Retrieves data from GitHub (PRs or Commenters)",
 	Long: `This command will get from GitHub for a given PR the list of comments
 (author and month). 
 
@@ -312,33 +311,6 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	return totalComments, output_slice
 }
 
-// Removes and truncates a Body or BodyText element
-func cleanBody(input string) (output string) {
-	re := regexp.MustCompile(`\r?\n`)
-	temp := re.ReplaceAllString(input, " ")
-
-	output = truncateString(temp, 40)
-	return output
-}
-
-func truncateString(input string, max int) (otput string) {
-	lastSpaceIx := -1
-	len := 0
-	for i, r := range input {
-		if unicode.IsSpace(r) {
-			lastSpaceIx = i
-		}
-		len++
-		if len >= max {
-			if lastSpaceIx != -1 {
-				return input[:lastSpaceIx] + "..."
-			}
-			// If here, string is longer than max, but has no spaces
-		}
-	}
-	// If here, string is shorter than max
-	return input
-}
 
 func createRecord(prSpec string, user string, date githubv4.DateTime) []string {
 	var output_record []string
