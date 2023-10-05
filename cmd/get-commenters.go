@@ -66,14 +66,14 @@ To extract the commenters for a single PR, use the \"forPR\" sub-command.
 		if isRootDebug {
 			fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
 
-			limit, remaining, _ := get_quota_data_v4()
+			limit, remaining, _, _ := get_quota_data_v4()
 			loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 		}
 
 		performAction(args[0])
 
 		if isRootDebug {
-			limit, remaining, _ := get_quota_data_v4()
+			limit, remaining, _, _ := get_quota_data_v4()
 			loggers.debug.Printf("End quota: %d/%d\n", remaining, limit)
 		}
 	},
