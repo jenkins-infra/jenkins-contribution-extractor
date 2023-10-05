@@ -26,8 +26,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // CSV header record
@@ -160,4 +162,32 @@ func loadGitHubToken(envVariableName string) string {
 		os.Exit(0)
 	}
 	return token
+}
+
+// Removes and truncates a Body or BodyText element
+func cleanBody(input string) (output string) {
+	re := regexp.MustCompile(`\r?\n`)
+	temp := re.ReplaceAllString(input, " ")
+
+	output = truncateString(temp, 40)
+	return output
+}
+
+func truncateString(input string, max int) (otput string) {
+	lastSpaceIx := -1
+	len := 0
+	for i, r := range input {
+		if unicode.IsSpace(r) {
+			lastSpaceIx = i
+		}
+		len++
+		if len >= max {
+			if lastSpaceIx != -1 {
+				return input[:lastSpaceIx] + "..."
+			}
+			// If here, string is longer than max, but has no spaces
+		}
+	}
+	// If here, string is shorter than max
+	return input
 }

@@ -40,12 +40,11 @@ import (
 var quotaCmd = &cobra.Command{
 	Use:   "quota",
 	Short: "Gets the current GitHub API quota status",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Long: `Gets the current GitHub API quota status.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The command displays the V3 (Rest) API quota as well as the V4 (GraphQL) API quota.
+
+Note that the GitHub token must be defined.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		get_quota()
 	},
@@ -53,16 +52,6 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(quotaCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// quotaCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// quotaCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // ---

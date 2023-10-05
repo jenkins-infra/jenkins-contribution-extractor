@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/jmMeessen/jenkins-get-commenters/cmd"
+import "github.com/jmMeessen/jenkins-stats/cmd"
 
 func main() {
 	cmd.Execute()
