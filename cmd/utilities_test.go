@@ -128,7 +128,6 @@ func Test_fileExist(t *testing.T) {
 	}
 }
 
-
 func Test_cleanBody(t *testing.T) {
 	type args struct {
 		input string

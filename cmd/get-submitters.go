@@ -29,7 +29,7 @@ import (
 
 // prCmd represents the pr command
 var prCmd = &cobra.Command{
-	Use:   "pr",
+	Use:   "submitters org year month",
 	Short: "A brief description of your command",
 	Long: `This command will get the list of comments
 	(author and month) from GitHub for a given PR . 

@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"log"
 
-
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -36,48 +35,32 @@ var isDebugGet bool
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
-	Use:   "get commenters|pr",
+	Use:   "get [commenters|pr]",
 	Short: "Retrieves data from GitHub (PRs or Commenters)",
-	Long: `This command will get from GitHub for a given PR the list of comments
-(author and month). 
-
-The PR is specified as "organization/project/PR number".
-
-The output is a CVS file, specified with the "-o"/"--out" parameter. If not
-defined it will take the default output filename.
-Each record of the output contains the following information:
-- PR specification
-- Commenter's login name
-- The month the comment was created (YYYY-MM)
-
-The behavior can be controlled with various flags, such as appending to an existing
-output file or overwriting it, header of no-header.
-
-This query requires authenticated API call. The GitHub Token (Personal Access Token) is
-retrieved from an environment variable (default is "GITHUB_TOKEN" but can be overridden with a flag)
+	Long: `Long description
 `,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
-			return err
-		}
-		if _, _, _, validateErr := validatePRspec(args[0]); validateErr != nil {
-			return validateErr
-		}
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		initLoggers()
-		if isRootDebug || isDebugGet {
-			loggers.debug.Println("******** New debug session ********")
-		}
+	// Args: func(cmd *cobra.Command, args []string) error {
+	// 	if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+	// 		return err
+	// 	}
+	// 	if _, _, _, validateErr := validatePRspec(args[0]); validateErr != nil {
+	// 		return validateErr
+	// 	}
+	// 	return nil
+	// },
+	// Run: func(cmd *cobra.Command, args []string) {
+	// 	initLoggers()
+	// 	if isRootDebug || isDebugGet {
+	// 		loggers.debug.Println("******** New debug session ********")
+	// 	}
 
-		if isRootDebug || isDebugGet {
-			fmt.Println("*** Debug mode enabled ***\nSee \"debug.log\" for the trace")
-		}
+	// 	if isRootDebug || isDebugGet {
+	// 		fmt.Println("*** Debug mode enabled ***\nSee \"debug.log\" for the trace")
+	// 	}
 
-		getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
+	// 	getCommenters(args[0], globalIsAppend, globalIsNoHeader, outputFileName)
 
-	},
+	// },
 }
 
 // Cobra initialize
@@ -310,7 +293,6 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	}
 	return totalComments, output_slice
 }
-
 
 func createRecord(prSpec string, user string, date githubv4.DateTime) []string {
 	var output_record []string
