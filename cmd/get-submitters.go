@@ -33,11 +33,26 @@ import (
 
 // prCmd represents the pr command
 var prCmd = &cobra.Command{
-	Use:   "submitters org year month",
+	Use:   "submitters [org] [YYYY-MM]",
 	Short: "Get all PRs (and their submitters) for a given month and org.",
-	Long: `Get all PRs (and their submitters) for a given month and org.`,
+	Long:  `Get all PRs (and their submitters) for a given month and org.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		//call requires two parameters (org and month)
+		if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
+			return err
+		}
+		if !isValidOrgFormat(args[0]) {
+			return fmt.Errorf("ERROR: %s is not a valid GitHub user or Org name.\n", args[0])
+		}
+
+		if !isValidMonthFormat(args[1]) {
+			return fmt.Errorf("ERROR: %s is not a valid month (should be \"YYYY-MM\").\n", args[0])
+		}
+
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err:=performTest()
+		err := performSearch(args[0], args[1])
 		if err != nil {
 			return err
 		}
@@ -45,16 +60,16 @@ var prCmd = &cobra.Command{
 	},
 }
 
-//TODO: get the parameter "ORG YYYY-MM"
-
 func init() {
 	getCmd.AddCommand(prCmd)
 
 }
 
-
-func performTest() error {
+// Main function: it searches GitHub for all PRs created in the given month
+func performSearch(searchedOrg string, searchedMonth string) error {
 	initLoggers()
+
+	//note: parameters are checked at Cobra API level
 
 	ghToken := loadGitHubToken(ghTokenVar)
 	src := oauth2.StaticTokenSource(
@@ -96,12 +111,23 @@ func performTest() error {
 			} `graphql:"search(first: $count, after: $pullRequestCursor, query: $searchQuery, type: ISSUE)"`
 		}
 
+		//TODO: pass date parameters to GraphQL
+		//TODO: get beginning and end date of month
+
+		// now := time.Now()
+		// currentYear, currentMonth, _ := now.Date()
+		// currentLocation := now.Location()
+
+		// firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
+		// lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+
 		variables := map[string]interface{}{
-			"searchQuery":       githubv4.String(fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:2023-09-01..2023-09-30`, githubv4.String("jenkinsci"))),
+			"searchQuery":       githubv4.String(fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:2023-09-01..2023-09-30`, githubv4.String(searchedOrg))),
 			"count":             githubv4.Int(100),
 			"pullRequestCursor": (*githubv4.String)(nil), // Null after argument to get first page.
 		}
 
+		//TODO: solve issue of different default output file for this command
 		//TODO: write header
 		//TODO: write CSV
 
@@ -161,5 +187,3 @@ func performTest() error {
 // 	  }
 // 	}
 //   }
-
-

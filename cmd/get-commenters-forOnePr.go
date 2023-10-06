@@ -31,7 +31,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-//TODO: better variable name
+// TODO: better variable name
 var isDebugGet bool
 
 // forPrCmd represents the forPr command
@@ -87,8 +87,6 @@ func init() {
 	if err != nil {
 		log.Printf("Error hiding debug flag: %v\n", err)
 	}
-
-
 
 }
 

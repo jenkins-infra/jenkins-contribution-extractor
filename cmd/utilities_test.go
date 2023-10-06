@@ -166,3 +166,146 @@ func Test_cleanBody(t *testing.T) {
 		})
 	}
 }
+
+// func Test_isValidMonthFormat(t *testing.T) {
+// 	type args struct {
+// 		input string
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 		want bool
+// 	}{
+// 		{
+// 			"Happy case",
+// 			args{input: "2023-09"},
+// 			true,
+// 		},
+// 		{
+// 			"just junk",
+// 			args{input: "junk"},
+// 			false,
+// 		},
+// 		{
+// 			"space",
+// 			args{input: " "},
+// 			false,
+// 		},
+// 		{
+// 			"empty",
+// 			args{input: ""},
+// 			false,
+// 		},
+// 		{
+// 			"invalid month",
+// 			args{input: "2023-16"},
+// 			false,
+// 		},
+// 		{
+// 			"invalid year",
+// 			args{input: "1515-06"},
+// 			false,
+// 		},
+// 		{
+// 			"too long",
+// 			args{input: "2023-09-13"},
+// 			false,
+// 		},
+
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if got := Test_isValidMonthFormat(tt.args.input); got != tt.want {
+// 				t.Errorf("Test_isValidMonthFormat() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
+
+func Test_isValidMonthFormat(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"Happy case",
+			args{input: "2023-09"},
+			true,
+		},
+		{
+			"just junk",
+			args{input: "junk"},
+			false,
+		},
+		{
+			"space",
+			args{input: " "},
+			false,
+		},
+		{
+			"empty",
+			args{input: ""},
+			false,
+		},
+		{
+			"invalid month",
+			args{input: "2023-16"},
+			false,
+		},
+		{
+			"invalid year",
+			args{input: "1515-06"},
+			false,
+		},
+		{
+			"too long",
+			args{input: "2023-09-13"},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isValidMonthFormat(tt.args.input); got != tt.want {
+				t.Errorf("isValidMonthFormat() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isValidOrgFormat(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"Happy case",
+			args{input: "jenkinsci"},
+			true,
+		},
+		{
+			"space",
+			args{input: " "},
+			false,
+		},
+		{
+			"empty",
+			args{input: ""},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isValidOrgFormat(tt.args.input); got != tt.want {
+				t.Errorf("isValidOrgFormat() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
