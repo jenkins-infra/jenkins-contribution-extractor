@@ -206,6 +206,9 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 	return true
 }
 
+// **************
+// **************
+
 // This is where it happens
 func performAction(inputFile string) {
 

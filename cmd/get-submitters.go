@@ -24,6 +24,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/shurcooL/githubv4"
@@ -46,7 +48,7 @@ var prCmd = &cobra.Command{
 		}
 
 		if !isValidMonthFormat(args[1]) {
-			return fmt.Errorf("ERROR: %s is not a valid month (should be \"YYYY-MM\").\n", args[0])
+			return fmt.Errorf("ERROR: %s is not a valid month (should be \"YYYY-MM\").\n", args[1])
 		}
 
 		return nil
@@ -63,10 +65,63 @@ var prCmd = &cobra.Command{
 func init() {
 	getCmd.AddCommand(prCmd)
 
+	//TODO: separate output default: https://github.com/spf13/cobra/issues/553 and https://travis.media/how-to-use-subcommands-in-cobra-go-cobra-tutorial/
+
 }
 
-// Main function: it searches GitHub for all PRs created in the given month
+// *************************
+// *************************
+
+// Main function: it searches GitHub for all PRs created in the given month and writes it to a CSV
 func performSearch(searchedOrg string, searchedMonth string) error {
+	initLoggers()
+	if isRootDebug {
+		loggers.debug.Println("******** New \"Get Submitters\" debug session ********")
+	}
+
+	if isRootDebug {
+		fmt.Print("*** Debug mode enabled ***\nSee \"debug.log\" for the trace\n\n")
+
+		limit, remaining, _, _ := get_quota_data_v4()
+		loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
+	}
+
+//get the data from GitHub
+	output_data_list, err := getData(searchedOrg, searchedMonth)
+	if err != nil {
+		return err
+	}
+
+	// Write to CSV
+	isAppend := globalIsAppend
+	if !globalIsAppend {
+		// Meaning that we need to create a new file
+		if fileExist(outputFileName) {
+			os.Remove(outputFileName)
+		}
+		isAppend = true
+	}
+
+	nbrOfPRs := len(output_data_list)
+	if nbrOfPRs > 0 {
+
+		// Creates, overwrites, or opens for append depending on the combination
+		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, globalIsNoHeader)
+		defer out.Close()
+
+		writeCSVtoFile(out, isAppend, newIsNoHeader, output_data_list)
+		out.Close()
+	} else {
+		if isVerbose {
+			fmt.Println("   No comments found for PR, skipping...")
+		}
+	}
+
+	return nil
+}
+
+// Gets the data from GitHub for all PRs created in the given month
+func getData(searchedOrg string, searchedMonth string) ([][]string, error) {
 	initLoggers()
 
 	//note: parameters are checked at Cobra API level
@@ -77,6 +132,8 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 	)
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
+
+	var prList [][]string
 
 	{
 		var prQuery struct {
@@ -94,13 +151,21 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 				Edges      []struct {
 					Node struct {
 						PullRequest struct {
+							Repository struct {
+								Name  string
+								Owner struct {
+									Login string
+								}
+							}
 							Author struct {
 								Login string
 							}
 							CreatedAt time.Time
-							ClosedAt  time.Time
+							MergedAt  time.Time
+							State     string
 							Url       string
 							Number    int
+							Title     string
 						} `graphql:"... on PullRequest"`
 					}
 				}
@@ -111,36 +176,69 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 			} `graphql:"search(first: $count, after: $pullRequestCursor, query: $searchQuery, type: ISSUE)"`
 		}
 
-		//TODO: pass date parameters to GraphQL
-		//TODO: get beginning and end date of month
-
-		// now := time.Now()
-		// currentYear, currentMonth, _ := now.Date()
-		// currentLocation := now.Location()
-
-		// firstOfMonth := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, currentLocation)
-		// lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+		startDate, endDate := getStartAndEndOfMonth(searchedMonth)
+		// A value of 0001-01-01 and 0001-01-31 indicates a rubbish input. Input is validated higher, so we don't check this here
 
 		variables := map[string]interface{}{
-			"searchQuery":       githubv4.String(fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:2023-09-01..2023-09-30`, githubv4.String(searchedOrg))),
+			"searchQuery": githubv4.String(
+				fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:%s..%s`,
+					githubv4.String(searchedOrg),
+					githubv4.String(startDate),
+					githubv4.String(endDate),
+				),
+			),
 			"count":             githubv4.Int(100),
 			"pullRequestCursor": (*githubv4.String)(nil), // Null after argument to get first page.
 		}
 
 		//TODO: solve issue of different default output file for this command
+		//TODO: handle progress bar (with updated target size)
 		//TODO: write header
 		//TODO: write CSV
+		//TODO: handle quota wait
+
 
 		i := 0
 		for {
 			err := client.Query(context.Background(), &prQuery, variables)
 			if err != nil {
-				return (err)
+				var emptyList [][]string
+				return emptyList, err
 			}
+			//TODO: Here we should retrieve the real sample size
 
 			totalIssues := prQuery.Search.IssueCount
 			for ii, singlePr := range prQuery.Search.Edges {
-				fmt.Printf("%d-%d (%d/%d)  %s %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
+				// data format: "org,repository,number,url,state,created_at,merged_at,user.login,month_year,title"
+				var record []string
+				record = append(record, singlePr.Node.PullRequest.Repository.Owner.Login) // Org
+				record = append(record, singlePr.Node.PullRequest.Repository.Name)        //repository
+				record = append(record, strconv.Itoa(singlePr.Node.PullRequest.Number))   // PR number
+				record = append(record, singlePr.Node.PullRequest.Url)                    // PR's URL
+				record = append(record, singlePr.Node.PullRequest.State)                  // PR's state
+
+				if singlePr.Node.PullRequest.CreatedAt.IsZero() {
+					record = append(record, "")
+				} else {
+					record = append(record, singlePr.Node.PullRequest.CreatedAt.Format(time.RFC3339)) //created At
+				}
+
+				if singlePr.Node.PullRequest.MergedAt.IsZero() {
+					record = append(record, "")
+				} else {
+					record = append(record, singlePr.Node.PullRequest.MergedAt.Format(time.RFC3339)) //mergedAt, if available
+				}
+
+				record = append(record, singlePr.Node.PullRequest.Author.Login)                // PR's author
+				record = append(record, singlePr.Node.PullRequest.CreatedAt.Format("2006-01")) // Creation month-year
+
+				cleanedTitle := truncateString(cleanBody(singlePr.Node.PullRequest.Title), 30) // clean and shorten the title
+				record = append(record, cleanedTitle)                                          // PR's description
+
+				prList = append(prList, record)
+
+				//TODO: show this only if in verbose mode
+				fmt.Printf("%d-%d (%d/%d)  %s    %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
 			}
 
 			if !prQuery.Search.PageInfo.HasNextPage {
@@ -149,41 +247,50 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 			variables["pullRequestCursor"] = githubv4.NewString(prQuery.Search.PageInfo.EndCursor)
 			i++
 		}
-		// printJSON(prQuery)
 	}
-	return nil
+	return prList, nil
 }
 
-//GitHub Graphql query
-// {
-// 	rateLimit {
-// 	  limit
-// 	  cost
-// 	  remaining
-// 	  resetAt
-// 	}
-// 	search(
-// 	  query: "org:jenkinsci is:pr -author:app/dependabot -author:app/renovate -author:jenkins-infra-bot created:2023-09-01..2023-09-30"
-// 	  type: ISSUE
-// 	  first: 100
-// 	) {
-// 	  issueCount
-// 	  pageInfo {
-// 		endCursor
-// 		hasNextPage
-// 	  }
-// 	  edges {
-// 		node {
-// 		  ... on PullRequest {
-// 			author {
-// 			  login
-// 			}
-// 			createdAt
-// 			closedAt
-// 			url
-// 			number
-// 		  }
-// 		}
-// 	  }
-// 	}
-//   }
+//GitHub Graphql query. Test at https://docs.github.com/en/graphql/overview/explorer
+/*
+{
+  rateLimit {
+    limit
+    cost
+    remaining
+    resetAt
+  }
+  search(
+    query: "org:jenkinsci is:pr -author:app/dependabot -author:app/renovate -author:jenkins-infra-bot created:2023-09-01..2023-09-30"
+    type: ISSUE
+    first: 100
+  ) {
+    issueCount
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        ... on PullRequest {
+          repository {
+            name
+            owner {
+              login
+            }
+          }
+          number
+          url
+          state
+          createdAt
+          closedAt
+          author {
+            login
+          }
+          title
+        }
+      }
+    }
+  }
+}
+*/

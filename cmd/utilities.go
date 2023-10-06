@@ -29,6 +29,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -232,5 +233,24 @@ func isValidOrgFormat(input string) bool {
 	}
 
 	return true
+}
 
+// returns the start and end day for a given month (YYYY-MM)
+func getStartAndEndOfMonth(shortMonth string) (startDate string, endDate string) {
+	//load short month in a time structure
+	inputDate, _ := time.Parse("2006-01", shortMonth)
+
+	//retrieve the year and month in time structure
+	inputYear, inputMonth, _ := inputDate.Date()
+
+	//Build the dates we are looking for
+	currentLocation := inputDate.Location()
+	firstOfMonth := time.Date(inputYear, inputMonth, 1, 0, 0, 0, 0, currentLocation)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+
+	//convert first and last days into a string in the expected format
+	firstOfMonthString := firstOfMonth.Format("2006-01-02")
+	lastOfMonthString := lastOfMonth.Format("2006-01-02")
+
+	return firstOfMonthString, lastOfMonthString
 }

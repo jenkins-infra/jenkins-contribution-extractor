@@ -309,3 +309,42 @@ func Test_isValidOrgFormat(t *testing.T) {
 		})
 	}
 }
+
+func Test_getStartAndEndOfMonth(t *testing.T) {
+	type args struct {
+		shortMonth string
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantStartDate string
+		wantEndDate   string
+	}{
+		{
+			"happy case",
+			args{shortMonth: "2023-09"},
+			"2023-09-01", "2023-09-30",
+		},
+		{
+			"happy case2",
+			args{shortMonth: "2023-02"},
+			"2023-02-01", "2023-02-28",
+		},
+		{
+			"Rubbish input",
+			args{shortMonth: "blaahhh"},
+			"0001-01-01", "0001-01-31",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotStartDate, gotEndDate := getStartAndEndOfMonth(tt.args.shortMonth)
+			if gotStartDate != tt.wantStartDate {
+				t.Errorf("getStartAndEndOfMonth() gotStartDate = %v, want %v", gotStartDate, tt.wantStartDate)
+			}
+			if gotEndDate != tt.wantEndDate {
+				t.Errorf("getStartAndEndOfMonth() gotEndDate = %v, want %v", gotEndDate, tt.wantEndDate)
+			}
+		})
+	}
+}
