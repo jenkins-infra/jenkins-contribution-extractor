@@ -22,7 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/csv"
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -32,9 +32,6 @@ import (
 	"time"
 	"unicode"
 )
-
-// CSV header record
-var csvHeader = []string{"PR_ref", "commenter", "month"}
 
 // validates that the supplied string is a valid PR specification
 // in the form of "org/project/pr_nbr"
@@ -67,28 +64,27 @@ func validatePRspec(prSpec string) (org string, project string, prNbr int, err e
 }
 
 // Write the string slice to a file formatted as a CSV
-func writeCSVtoFile(out *os.File, isAppend bool, isNoHeader bool, csv_output_slice [][]string) {
+func writeCSVtoFile(out *os.File, isAppend bool, isNoHeader bool, header string, csv_output_slice []string) {
 
 	localIsNoHeader := isNoHeader
 
-	//create a csv writer
-	csv_out := csv.NewWriter(out)
+	datawriter := bufio.NewWriter(out)
 
 	// Add the CSV header record, unless explicitly asked not to add it
 	if !localIsNoHeader {
-		headerWriteError := csv_out.Write(csvHeader)
+		_, headerWriteError := datawriter.WriteString(header + "\n")
 		if headerWriteError != nil {
 			log.Fatal(headerWriteError)
 		}
-		csv_out.Flush()
+		datawriter.Flush()
 	}
 
-	// write all the records in memory in one swoop
-	write_err := csv_out.WriteAll(csv_output_slice)
-	if write_err != nil {
-		log.Fatal(write_err)
+	// write all the records in memory
+	for _, data := range csv_output_slice {
+		_, _ = datawriter.WriteString(data + "\n")
 	}
-	csv_out.Flush()
+
+	datawriter.Flush()
 }
 
 // creates or opens for append (if the file exists) the output file
@@ -170,7 +166,10 @@ func cleanBody(input string) (output string) {
 	re := regexp.MustCompile(`\r?\n`)
 	temp := re.ReplaceAllString(input, " ")
 
-	output = truncateString(temp, 40)
+	re2 := regexp.MustCompile(`\"`)
+	temp2 := re2.ReplaceAllString(temp, "'")
+
+	output = truncateString(temp2, 40)
 	return output
 }
 

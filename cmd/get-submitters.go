@@ -25,7 +25,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/shurcooL/githubv4"
@@ -86,7 +85,7 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 		loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 	}
 
-//get the data from GitHub
+	//get the data from GitHub
 	output_data_list, err := getData(searchedOrg, searchedMonth)
 	if err != nil {
 		return err
@@ -109,7 +108,8 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, globalIsNoHeader)
 		defer out.Close()
 
-		writeCSVtoFile(out, isAppend, newIsNoHeader, output_data_list)
+		header := "org,repository,number,url,state,created_at,merged_at,user.login,month_year,title"
+		writeCSVtoFile(out, isAppend, newIsNoHeader, header, output_data_list)
 		out.Close()
 	} else {
 		if isVerbose {
@@ -121,7 +121,7 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 }
 
 // Gets the data from GitHub for all PRs created in the given month
-func getData(searchedOrg string, searchedMonth string) ([][]string, error) {
+func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 	initLoggers()
 
 	//note: parameters are checked at Cobra API level
@@ -133,7 +133,7 @@ func getData(searchedOrg string, searchedMonth string) ([][]string, error) {
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
 
-	var prList [][]string
+	var prList []string
 
 	{
 		var prQuery struct {
@@ -197,45 +197,47 @@ func getData(searchedOrg string, searchedMonth string) ([][]string, error) {
 		//TODO: write CSV
 		//TODO: handle quota wait
 
-
 		i := 0
 		for {
 			err := client.Query(context.Background(), &prQuery, variables)
 			if err != nil {
-				var emptyList [][]string
+				var emptyList []string
 				return emptyList, err
 			}
 			//TODO: Here we should retrieve the real sample size
 
 			totalIssues := prQuery.Search.IssueCount
 			for ii, singlePr := range prQuery.Search.Edges {
+
+				createdAtStr := ""
+				if !singlePr.Node.PullRequest.CreatedAt.IsZero() {
+					createdAtStr = singlePr.Node.PullRequest.CreatedAt.Format(time.RFC3339) //created At
+				}
+
+				mergedAtStr := ""
+				if !singlePr.Node.PullRequest.MergedAt.IsZero() {
+					mergedAtStr = singlePr.Node.PullRequest.MergedAt.Format(time.RFC3339) //mergedAt, if available
+				}
+
+				// clean and shorten the title
+				cleanedTitle := truncateString(cleanBody(singlePr.Node.PullRequest.Title), 30)
+
 				// data format: "org,repository,number,url,state,created_at,merged_at,user.login,month_year,title"
-				var record []string
-				record = append(record, singlePr.Node.PullRequest.Repository.Owner.Login) // Org
-				record = append(record, singlePr.Node.PullRequest.Repository.Name)        //repository
-				record = append(record, strconv.Itoa(singlePr.Node.PullRequest.Number))   // PR number
-				record = append(record, singlePr.Node.PullRequest.Url)                    // PR's URL
-				record = append(record, singlePr.Node.PullRequest.State)                  // PR's state
 
-				if singlePr.Node.PullRequest.CreatedAt.IsZero() {
-					record = append(record, "")
-				} else {
-					record = append(record, singlePr.Node.PullRequest.CreatedAt.Format(time.RFC3339)) //created At
-				}
+				dataLine := fmt.Sprintf("\"%s\",\"%s\",%d,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"",
+					singlePr.Node.PullRequest.Repository.Owner.Login,      // Org
+					singlePr.Node.PullRequest.Repository.Name,             //repository
+					singlePr.Node.PullRequest.Number,                      // PR number
+					singlePr.Node.PullRequest.Url,                         // PR's URL
+					singlePr.Node.PullRequest.State,                       // PR's state
+					createdAtStr,                                          // Creation date&time
+					mergedAtStr,                                           // Merged date&time
+					singlePr.Node.PullRequest.Author.Login,                // PR's author
+					singlePr.Node.PullRequest.CreatedAt.Format("2006-01"), // Creation month-year
+					cleanedTitle,                                          // PR's description
+				)
 
-				if singlePr.Node.PullRequest.MergedAt.IsZero() {
-					record = append(record, "")
-				} else {
-					record = append(record, singlePr.Node.PullRequest.MergedAt.Format(time.RFC3339)) //mergedAt, if available
-				}
-
-				record = append(record, singlePr.Node.PullRequest.Author.Login)                // PR's author
-				record = append(record, singlePr.Node.PullRequest.CreatedAt.Format("2006-01")) // Creation month-year
-
-				cleanedTitle := truncateString(cleanBody(singlePr.Node.PullRequest.Title), 30) // clean and shorten the title
-				record = append(record, cleanedTitle)                                          // PR's description
-
-				prList = append(prList, record)
+				prList = append(prList, dataLine)
 
 				//TODO: show this only if in verbose mode
 				fmt.Printf("%d-%d (%d/%d)  %s    %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
