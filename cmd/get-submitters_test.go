@@ -20,3 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 package cmd
+
+import "testing"
+
+func Test_testBar(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		{
+			"test",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testBar()
+		})
+	}
+}

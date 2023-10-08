@@ -27,6 +27,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -192,10 +193,22 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 		}
 
 		//TODO: solve issue of different default output file for this command
-		//TODO: handle progress bar (with updated target size)
-		//TODO: write header
-		//TODO: write CSV
 		//TODO: handle quota wait
+
+		var bar *progressbar.ProgressBar
+		barDescription := fmt.Sprintf("%s %s    ", searchedOrg, searchedMonth)
+		if !isVerbose {
+			bar = progressbar.NewOptions(
+				1000,
+				progressbar.OptionShowBytes(false),
+				progressbar.OptionSetDescription(barDescription),
+				progressbar.OptionSetPredictTime(false),
+				progressbar.OptionShowBytes(false),
+				progressbar.OptionFullWidth(),
+				progressbar.OptionShowCount(),
+			)
+			bar.Add(1)
+		}
 
 		i := 0
 		for {
@@ -204,9 +217,14 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 				var emptyList []string
 				return emptyList, err
 			}
-			//TODO: Here we should retrieve the real sample size
 
+			// We update the progress bar with the total size we get with the first call
 			totalIssues := prQuery.Search.IssueCount
+			if i == 0 && !isVerbose {
+				// +1 to compensate the initial add() we used to display the bar
+				bar.ChangeMax(totalIssues + 1)
+			}
+
 			for ii, singlePr := range prQuery.Search.Edges {
 
 				createdAtStr := ""
@@ -238,9 +256,14 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 				)
 
 				prList = append(prList, dataLine)
+				if !isVerbose {
+					bar.Add(1)
+				}
 
 				//TODO: show this only if in verbose mode
-				fmt.Printf("%d-%d (%d/%d)  %s    %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
+				if isVerbose {
+					fmt.Printf("%d-%d (%d/%d)  %s    %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
+				}
 			}
 
 			if !prQuery.Search.PageInfo.HasNextPage {
@@ -248,6 +271,11 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 			}
 			variables["pullRequestCursor"] = githubv4.NewString(prQuery.Search.PageInfo.EndCursor)
 			i++
+
+			checkIfSufficientQuota_2(2,
+				prQuery.RateLimit.Remaining,
+				prQuery.RateLimit.Limit,
+				prQuery.RateLimit.ResetAt)
 		}
 	}
 	return prList, nil
@@ -296,3 +324,16 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
   }
 }
 */
+
+func testBar() {
+	var bar *progressbar.ProgressBar
+	bar = progressbar.Default(int64(30))
+
+	for i := 0; i < 100; i++ {
+		bar.Add(1)
+		if i == 0 {
+			bar.ChangeMax(100)
+		}
+		time.Sleep(40 * time.Millisecond)
+	}
+}

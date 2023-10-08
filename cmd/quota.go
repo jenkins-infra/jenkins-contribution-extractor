@@ -164,6 +164,42 @@ func checkIfSufficientQuota(expectedLoad int) {
 	// Else we do nothing as we are good to go.
 }
 
+// Used in the Get Submitters (we get the quota with the call)
+func checkIfSufficientQuota_2(expectedLoad int, remaining int, limit int, resetAt time.Time) {
+	// initialize we  are called outside the normal flow
+	initLoggers()
+
+	// pretty print the reset time (UTC)
+	resetTimeString := resetAt.Format(time.RFC1123)
+
+	// compute how many seconds are before reset
+	now := time.Now()
+	diff := resetAt.Sub(now)
+	secondsToGo := int(diff.Seconds())
+
+	if isRootDebug || isDebugGet {
+		loggers.debug.Printf("Quota: %d/%d (%d secs -> %s\n", remaining, limit, secondsToGo, resetTimeString)
+		loggers.debug.Printf("Requesting to process %d\n", expectedLoad)
+	}
+
+	globalIsBigFile = false
+
+	if expectedLoad >= limit {
+		if isRootDebug || isDebugGet {
+			loggers.debug.Printf("Expected load (%d) is higher then limit (%d)\n", expectedLoad, limit)
+		}
+		fmt.Printf("Expected load (%d) is higher then limit (%d)\n Crossing fingers and continuing...\n", expectedLoad, limit)
+		globalIsBigFile = true
+		return
+	}
+
+	if (expectedLoad + 20) > remaining {
+		//Not enough resources, we need to wait
+		waitForReset(secondsToGo)
+	}
+	// Else we do nothing as we are good to go.
+}
+
 // Wait for a certain number of seconds
 func waitForReset(secondsToReset int) {
 	//TODO: check input value
