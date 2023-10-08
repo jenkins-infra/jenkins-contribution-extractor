@@ -207,7 +207,8 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 				progressbar.OptionFullWidth(),
 				progressbar.OptionShowCount(),
 			)
-			bar.Add(1)
+			//TODO: treat error
+			_ = bar.Add(1)
 		}
 
 		i := 0
@@ -257,7 +258,8 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 
 				prList = append(prList, dataLine)
 				if !isVerbose {
-					bar.Add(1)
+					//TODO: treat error
+					_ = bar.Add(1)
 				}
 
 				//TODO: show this only if in verbose mode
@@ -325,15 +327,3 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 }
 */
 
-func testBar() {
-	var bar *progressbar.ProgressBar
-	bar = progressbar.Default(int64(30))
-
-	for i := 0; i < 100; i++ {
-		bar.Add(1)
-		if i == 0 {
-			bar.ChangeMax(100)
-		}
-		time.Sleep(40 * time.Millisecond)
-	}
-}
