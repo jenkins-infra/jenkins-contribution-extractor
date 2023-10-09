@@ -31,7 +31,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-//TODO: better variable name
+// TODO: better variable name
 var isDebugGet bool
 
 // forPrCmd represents the forPr command
@@ -88,8 +88,6 @@ func init() {
 		log.Printf("Error hiding debug flag: %v\n", err)
 	}
 
-
-
 }
 
 //**********
@@ -123,7 +121,8 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
 		defer out.Close()
 
-		writeCSVtoFile(out, isAppend, newIsNoHeader, output_data_list)
+		header := "PR_ref,commenter,month"
+		writeCSVtoFile(out, isAppend, newIsNoHeader, header, output_data_list)
 		out.Close()
 	} else {
 		if isVerbose {
@@ -209,7 +208,7 @@ var prQuery2 struct {
 	}
 }
 
-func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output [][]string) {
+func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []string) {
 	// retrieve the token value from the specified environment variable
 	// ghTokenVar is global and set by the CLI parser
 	ghToken := loadGitHubToken(ghTokenVar)
@@ -241,7 +240,7 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	totalComments := 0
 	dbgDateFormat := "2006-01-02 15:04:05"
 
-	var output_slice [][]string
+	var output_slice []string
 
 	for i, comment := range prQuery2.Repository.PullRequest.Comments.Nodes {
 		//When there is no info about the user, it means it has been deleted
@@ -308,9 +307,8 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	return totalComments, output_slice
 }
 
-func createRecord(prSpec string, user string, date githubv4.DateTime) []string {
-	var output_record []string
+func createRecord(prSpec string, user string, date githubv4.DateTime) string {
 	monthFormat := "2006-01"
-	output_record = append(output_record, prSpec, user, date.Format(monthFormat))
+	output_record := fmt.Sprintf("\"%s\",\"%s\",\"%s\"", prSpec, user, date.Format(monthFormat))
 	return output_record
 }

@@ -22,11 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
-
 	"github.com/spf13/cobra"
 )
-
-
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
@@ -45,7 +42,5 @@ func init() {
 	getCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
 
 	rootCmd.PersistentFlags().BoolVarP(&isRootDebug, "debug", "", false, "Display debug information (super verbose mode)")
-
-
 
 }
