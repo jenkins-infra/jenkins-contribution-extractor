@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -159,7 +160,8 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 								}
 							}
 							Author struct {
-								Login string
+								Login        string
+								ResourcePath string
 							}
 							CreatedAt time.Time
 							MergedAt  time.Time
@@ -228,6 +230,11 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 
 			for ii, singlePr := range prQuery.Search.Edges {
 
+				if !isVerbose {
+					//TODO: treat error
+					_ = bar.Add(1)
+				}
+
 				createdAtStr := ""
 				if !singlePr.Node.PullRequest.CreatedAt.IsZero() {
 					createdAtStr = singlePr.Node.PullRequest.CreatedAt.Format(time.RFC3339) //created At
@@ -236,6 +243,16 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 				mergedAtStr := ""
 				if !singlePr.Node.PullRequest.MergedAt.IsZero() {
 					mergedAtStr = singlePr.Node.PullRequest.MergedAt.Format(time.RFC3339) //mergedAt, if available
+				}
+
+				author := ""
+				// Applications have a RessourcePath that starts with "/apps" and we don't count them
+				regexpApp := regexp.MustCompile(`^\/apps\/`)
+				if regexpApp.MatchString(singlePr.Node.PullRequest.Author.ResourcePath) {
+					author = singlePr.Node.PullRequest.Author.ResourcePath
+					continue
+				} else {
+					author = singlePr.Node.PullRequest.Author.Login
 				}
 
 				// clean and shorten the title
@@ -251,16 +268,13 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 					singlePr.Node.PullRequest.State,                       // PR's state
 					createdAtStr,                                          // Creation date&time
 					mergedAtStr,                                           // Merged date&time
-					singlePr.Node.PullRequest.Author.Login,                // PR's author
+					author,                                                // PR's author
 					singlePr.Node.PullRequest.CreatedAt.Format("2006-01"), // Creation month-year
 					cleanedTitle,                                          // PR's description
 				)
 
 				prList = append(prList, dataLine)
-				if !isVerbose {
-					//TODO: treat error
-					_ = bar.Add(1)
-				}
+
 
 				//TODO: show this only if in verbose mode
 				if isVerbose {
@@ -318,6 +332,7 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
           closedAt
           author {
             login
+			resourcePath
           }
           title
         }
@@ -326,4 +341,3 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
   }
 }
 */
-
