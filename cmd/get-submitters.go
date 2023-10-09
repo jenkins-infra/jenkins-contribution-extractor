@@ -249,7 +249,6 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 				// Applications have a RessourcePath that starts with "/apps" and we don't count them
 				regexpApp := regexp.MustCompile(`^\/apps\/`)
 				if regexpApp.MatchString(singlePr.Node.PullRequest.Author.ResourcePath) {
-					author = singlePr.Node.PullRequest.Author.ResourcePath
 					continue
 				} else {
 					author = singlePr.Node.PullRequest.Author.Login
