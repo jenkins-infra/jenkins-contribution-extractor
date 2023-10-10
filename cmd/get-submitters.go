@@ -293,6 +293,8 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 				prQuery.RateLimit.ResetAt)
 		}
 	}
+	// as the progress exist doesn't do it
+	fmt.Printf("\n")
 	return prList, nil
 }
 
