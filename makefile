@@ -32,8 +32,12 @@ build:  ## Build the binary file
 clean: ## Remove previous build
 	@rm -f ./jenkins-stats
 	@rm -f ./rm top-submitters_*.csv
+	@rm -f ./jenkins_commenters_data.csv
+	@rm -f ./cmd/jenkins_commenters_data.csv
 	@rm -f ./cover.out
 	@rm -f ./coverage.txt
+	@rm -f ./debug.log
+	@rm -f ./cmd/debug.log
  
 help: ## Display this help screen
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

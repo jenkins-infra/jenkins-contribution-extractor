@@ -87,8 +87,23 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 		loggers.debug.Printf("Start quota: %d/%d\n", remaining, limit)
 	}
 
+	// Check whether we will not get too many items, forcing us to split
+	nbrOfItems, errGetTotal := getTotalNumberOfItems(searchedOrg, searchedMonth)
+	if errGetTotal != nil {
+		return errGetTotal
+	}
+
+	if nbrOfItems > 1000 {
+		fmt.Printf("We need to split: query returns more then 1000 items (is %d)\n", nbrOfItems)
+		return fmt.Errorf("Query returns more than 1K items")
+	}
+
+	//FIXME: Split this if too big
+	startDate, endDate := getStartAndEndOfMonth(searchedMonth)
+	// A value of 0001-01-01 and 0001-01-31 indicates a rubbish input. Input is validated higher, so we don't check this here
+
 	//get the data from GitHub
-	output_data_list, err := getData(searchedOrg, searchedMonth)
+	output_data_list, err := getData(searchedOrg, startDate, endDate)
 	if err != nil {
 		return err
 	}
@@ -123,8 +138,8 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 }
 
 // Gets the data from GitHub for all PRs created in the given month
-func getData(searchedOrg string, searchedMonth string) ([]string, error) {
-	initLoggers()
+func getData(searchedOrg string, startDate string, endDate string) ([]string, error) {
+	// initLoggers()
 
 	//note: parameters are checked at Cobra API level
 
@@ -179,9 +194,6 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 			} `graphql:"search(first: $count, after: $pullRequestCursor, query: $searchQuery, type: ISSUE)"`
 		}
 
-		startDate, endDate := getStartAndEndOfMonth(searchedMonth)
-		// A value of 0001-01-01 and 0001-01-31 indicates a rubbish input. Input is validated higher, so we don't check this here
-
 		variables := map[string]interface{}{
 			"searchQuery": githubv4.String(
 				fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:%s..%s`,
@@ -196,9 +208,10 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 
 		//TODO: solve issue of different default output file for this command
 		//TODO: handle quota wait
+		//FIXME: for query returning more than 1000 items, there seems to be an interruption
 
 		var bar *progressbar.ProgressBar
-		barDescription := fmt.Sprintf("%s %s    ", searchedOrg, searchedMonth)
+		barDescription := fmt.Sprintf("%s %s->%s    ", searchedOrg, startDate, endDate)
 		if !isVerbose {
 			bar = progressbar.NewOptions(
 				1000,
@@ -217,13 +230,23 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 		for {
 			err := client.Query(context.Background(), &prQuery, variables)
 			if err != nil {
+				if isRootDebug {
+					loggers.debug.Printf("Error performing query: %v\n", err)
+				}
 				var emptyList []string
 				return emptyList, err
+			}
+
+			if isRootDebug {
+				loggers.debug.Printf("GitHub query successful: retrieved %d PRs", len(prQuery.Search.Edges))
 			}
 
 			// We update the progress bar with the total size we get with the first call
 			totalIssues := prQuery.Search.IssueCount
 			if i == 0 && !isVerbose {
+				if isRootDebug {
+					loggers.debug.Printf("Expecting to treat %d items. Resetting progress bar\n", totalIssues)
+				}
 				// +1 to compensate the initial add() we used to display the bar
 				bar.ChangeMax(totalIssues + 1)
 			}
@@ -272,21 +295,26 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 					cleanedTitle,                                          // PR's description
 				)
 
+				if isRootDebug {
+					loggers.debug.Printf("   %d-%d (%d/%d)  %s\n", i, ii, (i*100)+ii, totalIssues, dataLine)
+				}
 				prList = append(prList, dataLine)
 
-
-				//TODO: show this only if in verbose mode
 				if isVerbose {
 					fmt.Printf("%d-%d (%d/%d)  %s    %s\n", i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Author.Login, singlePr.Node.PullRequest.Url)
 				}
 			}
 
 			if !prQuery.Search.PageInfo.HasNextPage {
+				if isRootDebug {
+					loggers.debug.Printf("HasNextPage is set to false. Exiting loop...\n")
+				}
 				break
 			}
 			variables["pullRequestCursor"] = githubv4.NewString(prQuery.Search.PageInfo.EndCursor)
 			i++
 
+			// Function has its own debug trace
 			checkIfSufficientQuota_2(2,
 				prQuery.RateLimit.Remaining,
 				prQuery.RateLimit.Limit,
@@ -296,6 +324,78 @@ func getData(searchedOrg string, searchedMonth string) ([]string, error) {
 	// as the progress exist doesn't do it
 	fmt.Printf("\n")
 	return prList, nil
+}
+
+// Makes a call to GitHub to get the total number of items. We can handle only 1K items in one
+// series of call. If above 1K we will have to split by decreasing the date range.
+func getTotalNumberOfItems(searchedOrg string, searchedMonth string) (int, error) {
+	ghToken := loadGitHubToken(ghTokenVar)
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: ghToken},
+	)
+	httpClient := oauth2.NewClient(context.Background(), src)
+	client := githubv4.NewClient(httpClient)
+
+	var prQuery struct {
+		Viewer struct {
+			Login string
+		}
+		RateLimit struct {
+			Limit     int
+			Cost      int
+			Remaining int
+			ResetAt   time.Time
+		}
+		Search struct {
+			IssueCount int
+			Edges      []struct {
+				Node struct {
+					PullRequest struct {
+						Url    string
+						Number int
+						Title  string
+					} `graphql:"... on PullRequest"`
+				}
+			}
+			PageInfo struct {
+				EndCursor   githubv4.String
+				HasNextPage bool
+			}
+		} `graphql:"search(first: $count, after: $pullRequestCursor, query: $searchQuery, type: ISSUE)"`
+	}
+
+	startDate, endDate := getStartAndEndOfMonth(searchedMonth)
+	// A value of 0001-01-01 and 0001-01-31 indicates a rubbish input. Input is validated higher, so we don't check this here
+
+	variables := map[string]interface{}{
+		"searchQuery": githubv4.String(
+			fmt.Sprintf(`org:%s is:pr -author:app/dependabot -author:app/renovate -author:app/github-actions -author:jenkins-infra-bot created:%s..%s`,
+				githubv4.String(searchedOrg),
+				githubv4.String(startDate),
+				githubv4.String(endDate),
+			),
+		),
+		"count":             githubv4.Int(100),
+		"pullRequestCursor": (*githubv4.String)(nil), // Null after argument to get first page.
+	}
+
+	// Make the call
+	err := client.Query(context.Background(), &prQuery, variables)
+	if err != nil {
+		if isRootDebug {
+			loggers.debug.Printf("Error performing query: %v\n", err)
+		}
+		return 0, err
+	}
+
+	if isRootDebug {
+		loggers.debug.Printf("GitHub query successful: retrieved %d PRs", len(prQuery.Search.Edges))
+	}
+
+	// We update the progress bar with the total size we get with the first call
+	totalIssues := prQuery.Search.IssueCount
+
+	return totalIssues, nil
 }
 
 //GitHub Graphql query. Test at https://docs.github.com/en/graphql/overview/explorer
