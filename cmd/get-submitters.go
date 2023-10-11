@@ -34,6 +34,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var isSkipClosed bool
+
 // prCmd represents the pr command
 var prCmd = &cobra.Command{
 	Use:   "submitters [org] [YYYY-MM]",
@@ -64,6 +66,7 @@ var prCmd = &cobra.Command{
 }
 
 func init() {
+	prCmd.PersistentFlags().BoolVarP(&isSkipClosed, "skip_closed", "", false, "Skip PR marked as closed.")
 	getCmd.AddCommand(prCmd)
 
 	//TODO: separate output default: https://github.com/spf13/cobra/issues/553 and https://travis.media/how-to-use-subcommands-in-cobra-go-cobra-tutorial/
@@ -115,10 +118,10 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 			i++
 		}
 		if isRootDebug {
-			loggers.debug.Printf("expected nbr of items (%d) vs. retrieved nbr of items (%d)\n",nbrOfItems,loadedItems)
+			loggers.debug.Printf("expected nbr of items (%d) vs. retrieved nbr of items (%d)\n", nbrOfItems, loadedItems)
 		}
 		if nbrOfItems != loadedItems {
-			return fmt.Errorf("Expected nbr of items (%d) does not match retrieved nbr of items (%d)",nbrOfItems,loadedItems)
+			return fmt.Errorf("Expected nbr of items (%d) does not match retrieved nbr of items (%d)", nbrOfItems, loadedItems)
 		}
 
 	} else {
@@ -298,9 +301,26 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 				// Applications have a RessourcePath that starts with "/apps" and we don't count them
 				regexpApp := regexp.MustCompile(`^\/apps\/`)
 				if regexpApp.MatchString(singlePr.Node.PullRequest.Author.ResourcePath) {
+					if isRootDebug {
+						loggers.debug.Printf("   %d-%d (%d/%d)  Skipping %s because user %s is an application.\n",
+							i, ii, (i*100)+ii, totalIssues, 
+							singlePr.Node.PullRequest.Url, 
+							singlePr.Node.PullRequest.Author.ResourcePath)
+					}
 					continue
 				} else {
 					author = singlePr.Node.PullRequest.Author.Login
+				}
+
+				// Skip PR if the status is CLOSED (Same behavior as the bash extraction)
+				if isSkipClosed {
+					if singlePr.Node.PullRequest.State == "CLOSED" {
+						if isRootDebug {
+							loggers.debug.Printf("   %d-%d (%d/%d)  Skipping %s because it is CLOSED\n",
+								i, ii, (i*100)+ii, totalIssues,singlePr.Node.PullRequest.Url)
+						}
+						continue
+					}
 				}
 
 				// clean and shorten the title
@@ -349,7 +369,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 	}
 	// as the progress exist doesn't do it
 	fmt.Printf("\n")
-	return prList, issueCount,  nil
+	return prList, issueCount, nil
 }
 
 // Makes a call to GitHub to get the total number of items. We can handle only 1K items in one
