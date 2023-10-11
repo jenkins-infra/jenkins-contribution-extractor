@@ -21,7 +21,9 @@ THE SOFTWARE.
 */
 package cmd
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_getTotalNumberOfItems(t *testing.T) {
 	type args struct {
@@ -64,3 +66,31 @@ func Test_getTotalNumberOfItems(t *testing.T) {
 		})
 	}
 }
+
+// func Test_performSearch(t *testing.T) {
+// 	type args struct {
+// 		searchedOrg   string
+// 		searchedMonth string
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		args    args
+// 		wantErr bool
+// 	}{
+// 		{
+// 			"test run for debug",
+// 			args{
+// 				searchedOrg:   "jenkinsci",
+// 				searchedMonth: "2020-01",
+// 			},
+// 			false,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			if err := performSearch(tt.args.searchedOrg, tt.args.searchedMonth); (err != nil) != tt.wantErr {
+// 				t.Errorf("performSearch() error = %v, wantErr %v", err, tt.wantErr)
+// 			}
+// 		})
+// 	}
+// }

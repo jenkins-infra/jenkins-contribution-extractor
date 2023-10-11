@@ -301,20 +301,16 @@ func splitPeriodForMaxQueryItem(totalNbrIssue int, shortMonth string, requestedI
 			}
 			return "", "", false
 		}
-		fmt.Printf("Result: %d\n", totalIterations)
 		numberOfDaysInMonth := lastOfMonth.Day()
-		fmt.Printf("Number of days in month: %d\n", numberOfDaysInMonth)
 		daysPerIterations := int(numberOfDaysInMonth / totalIterations)
 
 		//compute the iteration start date
-		iterationStartDay := (daysPerIterations * requestedIteration) +1
-		fmt.Printf("Iteration start day: %d\n", iterationStartDay)
+		iterationStartDay := (daysPerIterations * requestedIteration) + 1
 		startOfIterationDate := time.Date(inputYear, inputMonth, iterationStartDay, 0, 0, 0, 0, currentLocation)
 		startDate = startOfIterationDate.Format("2006-01-02")
 
 		//compute the iteration end date
 		iterationEndDay := daysPerIterations + (daysPerIterations * requestedIteration)
-		fmt.Printf("Iteration End Date: %d\n", iterationEndDay)
 		endOfIterationDate := time.Date(inputYear, inputMonth, iterationEndDay, 0, 0, 0, 0, currentLocation)
 		endDate = endOfIterationDate.Format("2006-01-02")
 

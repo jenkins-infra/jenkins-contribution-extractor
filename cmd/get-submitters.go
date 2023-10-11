@@ -92,20 +92,45 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 	if errGetTotal != nil {
 		return errGetTotal
 	}
-
-	if nbrOfItems > 1000 {
-		fmt.Printf("We need to split: query returns more then 1000 items (is %d)\n", nbrOfItems)
-		return fmt.Errorf("Query returns more than 1K items")
+	if isRootDebug {
+		loggers.debug.Printf("Total number of items in month: %d\n", nbrOfItems)
 	}
 
-	//FIXME: Split this if too big
-	startDate, endDate := getStartAndEndOfMonth(searchedMonth)
-	// A value of 0001-01-01 and 0001-01-31 indicates a rubbish input. Input is validated higher, so we don't check this here
+	var output_data_list []string
 
-	//get the data from GitHub
-	output_data_list, err := getData(searchedOrg, startDate, endDate)
-	if err != nil {
-		return err
+	if nbrOfItems > 1000 {
+		hasMore := true
+		i := 0
+		startDate := ""
+		endDate := ""
+		loadedItems := 0
+		for hasMore {
+			startDate, endDate, hasMore = splitPeriodForMaxQueryItem(nbrOfItems, searchedMonth, i)
+			output_list, itemsInIterations, err := getData(searchedOrg, startDate, endDate)
+			if err != nil {
+				return err
+			}
+			output_data_list = append(output_data_list, output_list...)
+			loadedItems = loadedItems + itemsInIterations
+			i++
+		}
+		if isRootDebug {
+			loggers.debug.Printf("expected nbr of items (%d) vs. retrieved nbr of items (%d)\n",nbrOfItems,loadedItems)
+		}
+		if nbrOfItems != loadedItems {
+			return fmt.Errorf("Expected nbr of items (%d) does not match retrieved nbr of items (%d)",nbrOfItems,loadedItems)
+		}
+
+	} else {
+		startDate, endDate := getStartAndEndOfMonth(searchedMonth)
+		// A value of 0001-01-01 and 0001-01-31 indicates a rubbish input. Input is validated higher, so we don't check this here
+
+		//get the data from GitHub
+		var err error
+		output_data_list, _, err = getData(searchedOrg, startDate, endDate)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Write to CSV
@@ -138,7 +163,7 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 }
 
 // Gets the data from GitHub for all PRs created in the given month
-func getData(searchedOrg string, startDate string, endDate string) ([]string, error) {
+func getData(searchedOrg string, startDate string, endDate string) ([]string, int, error) {
 	// initLoggers()
 
 	//note: parameters are checked at Cobra API level
@@ -151,6 +176,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, er
 	client := githubv4.NewClient(httpClient)
 
 	var prList []string
+	issueCount := 0
 
 	{
 		var prQuery struct {
@@ -208,7 +234,6 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, er
 
 		//TODO: solve issue of different default output file for this command
 		//TODO: handle quota wait
-		//FIXME: for query returning more than 1000 items, there seems to be an interruption
 
 		var bar *progressbar.ProgressBar
 		barDescription := fmt.Sprintf("%s %s->%s    ", searchedOrg, startDate, endDate)
@@ -234,7 +259,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, er
 					loggers.debug.Printf("Error performing query: %v\n", err)
 				}
 				var emptyList []string
-				return emptyList, err
+				return emptyList, 0, err
 			}
 
 			if isRootDebug {
@@ -247,6 +272,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, er
 				if isRootDebug {
 					loggers.debug.Printf("Expecting to treat %d items. Resetting progress bar\n", totalIssues)
 				}
+				issueCount = totalIssues
 				// +1 to compensate the initial add() we used to display the bar
 				bar.ChangeMax(totalIssues + 1)
 			}
@@ -323,7 +349,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, er
 	}
 	// as the progress exist doesn't do it
 	fmt.Printf("\n")
-	return prList, nil
+	return prList, issueCount,  nil
 }
 
 // Makes a call to GitHub to get the total number of items. We can handle only 1K items in one
