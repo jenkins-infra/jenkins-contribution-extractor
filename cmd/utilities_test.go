@@ -495,7 +495,7 @@ func Test_splitPeriodForMaxQueryItem(t *testing.T) {
 				shortMonth:         "2023-08",
 				requestedIteration: 1,
 			},
-			"2023-08-16", "2023-08-30", false,
+			"2023-08-16", "2023-08-31", false,
 		},
 		{
 			"Above limit (2500) 31d - need 3 iterations - 1",

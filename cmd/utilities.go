@@ -321,6 +321,9 @@ func splitPeriodForMaxQueryItem(totalNbrIssue int, shortMonth string, requestedI
 		//did we reach the last iteration?
 		if (requestedIteration + 1) == totalIterations {
 			moreIteration = false
+			// in the last iteration, we catch up any rounding errors by forcing the months's last day
+			endOfIterationDate := time.Date(inputYear, inputMonth, numberOfDaysInMonth, 0, 0, 0, 0, currentLocation)
+			endDate = endOfIterationDate.Format("2006-01-02")
 		} else {
 			moreIteration = true
 		}
