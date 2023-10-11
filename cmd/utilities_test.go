@@ -348,3 +348,195 @@ func Test_getStartAndEndOfMonth(t *testing.T) {
 		})
 	}
 }
+
+func Test_splitPeriodForMaxQueryItem(t *testing.T) {
+	type args struct {
+		totalNbrIssue      int
+		shortMonth         string
+		requestedIteration int
+	}
+	tests := []struct {
+		name              string
+		args              args
+		wantStartDate     string
+		wantEndDate       string
+		wantMoreIteration bool
+	}{
+		{
+			"Below limit",
+			args{
+				totalNbrIssue:      800,
+				shortMonth:         "2023-09",
+				requestedIteration: 0,
+			},
+			"2023-09-01", "2023-09-30", false,
+		},
+		{
+			"invalid input - negative iteration",
+			args{
+				totalNbrIssue:      800,
+				shortMonth:         "2023-09",
+				requestedIteration: -1,
+			},
+			"", "", false,
+		},
+		{
+			"invalid input - negative total issues",
+			args{
+				totalNbrIssue:      -1,
+				shortMonth:         "2023-09",
+				requestedIteration: 0,
+			},
+			"", "", false,
+		},
+		{
+			"invalid input - unprocessable number of issues",
+			args{
+				totalNbrIssue:      28001,
+				shortMonth:         "2023-09",
+				requestedIteration: 0,
+			},
+			"", "", false,
+		},
+		{
+			"Below limit - invalid iteration number",
+			args{
+				totalNbrIssue:      800,
+				shortMonth:         "2023-09",
+				requestedIteration: 10,
+			},
+			"", "", false,
+		},
+		{
+			"Below limit - junk short date",
+			args{
+				totalNbrIssue:      800,
+				shortMonth:         "blaah",
+				requestedIteration: 0,
+			},
+			"", "", false,
+		},
+		{
+			"Above limit - junk short date",
+			args{
+				totalNbrIssue:      1400,
+				shortMonth:         "blaah",
+				requestedIteration: 0,
+			},
+			"", "", false,
+		},
+		{
+			"Above limit (1400) - first iteration",
+			args{
+				totalNbrIssue:      1400,
+				shortMonth:         "2023-09",
+				requestedIteration: 0,
+			},
+			"2023-09-01", "2023-09-15", true,
+		},
+		{
+			"Above limit (1400) - second and last iteration",
+			args{
+				totalNbrIssue:      1400,
+				shortMonth:         "2023-09",
+				requestedIteration: 1,
+			},
+			"2023-09-16", "2023-09-30", false,
+		},
+		{
+			"Above limit (1900) - second and last iteration",
+			args{
+				totalNbrIssue:      1900,
+				shortMonth:         "2023-09",
+				requestedIteration: 1,
+			},
+			"2023-09-16", "2023-09-30", false,
+		},
+		{
+			"Above limit (1900) - out of bound iteration",
+			args{
+				totalNbrIssue:      1900,
+				shortMonth:         "2023-09",
+				requestedIteration: 4,
+			},
+			"", "", false,
+		},
+		{
+			"Above limit (2500) - need 3 iterations - 1",
+			args{
+				totalNbrIssue:      2500,
+				shortMonth:         "2023-09",
+				requestedIteration: 0,
+			},
+			"2023-09-01", "2023-09-10", true,
+		},
+		{
+			"Above limit (2500) - need 3 iterations - 2",
+			args{
+				totalNbrIssue:      2500,
+				shortMonth:         "2023-09",
+				requestedIteration: 1,
+			},
+			"2023-09-11", "2023-09-20", true,
+		},
+		{
+			"Above limit (2500) - need 3 iterations - 3",
+			args{
+				totalNbrIssue:      2500,
+				shortMonth:         "2023-09",
+				requestedIteration: 2,
+			},
+			"2023-09-21", "2023-09-30", false,
+		},
+		{
+			"Above limit (1400) 31d - second and last iteration",
+			args{
+				totalNbrIssue:      1400,
+				shortMonth:         "2023-08",
+				requestedIteration: 1,
+			},
+			"2023-08-16", "2023-08-30", false,
+		},
+		{
+			"Above limit (2500) 31d - need 3 iterations - 1",
+			args{
+				totalNbrIssue:      2500,
+				shortMonth:         "2023-08",
+				requestedIteration: 0,
+			},
+			"2023-08-01", "2023-08-10", true,
+		},
+		{
+			"Above limit (2500) 31d - need 3 iterations - 2",
+			args{
+				totalNbrIssue:      2500,
+				shortMonth:         "2023-08",
+				requestedIteration: 1,
+			},
+			"2023-08-11", "2023-08-20", true,
+		},
+		{
+			"Above limit (2500) 31d- need 3 iterations - 3",
+			args{
+				totalNbrIssue:      2500,
+				shortMonth:         "2023-08",
+				requestedIteration: 2,
+			},
+			"2023-08-21", "2023-08-31", false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotStartDate, gotEndDate, gotMoreIteration := splitPeriodForMaxQueryItem(tt.args.totalNbrIssue, tt.args.shortMonth, tt.args.requestedIteration)
+			if gotStartDate != tt.wantStartDate {
+				t.Errorf("splitPeriodForMaxQueryItem() gotStartDate = %v, want %v", gotStartDate, tt.wantStartDate)
+			}
+			if gotEndDate != tt.wantEndDate {
+				t.Errorf("splitPeriodForMaxQueryItem() gotEndDate = %v, want %v", gotEndDate, tt.wantEndDate)
+			}
+			if gotMoreIteration != tt.wantMoreIteration {
+				t.Errorf("splitPeriodForMaxQueryItem() gotMoreIteration = %v, want %v", gotMoreIteration, tt.wantMoreIteration)
+			}
+		})
+	}
+}

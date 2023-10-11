@@ -234,6 +234,105 @@ func isValidOrgFormat(input string) bool {
 	return true
 }
 
+// Computes the start and end date based on the total number of issues returned by query
+func splitPeriodForMaxQueryItem(totalNbrIssue int, shortMonth string, requestedIteration int) (startDate string, endDate string, moreIteration bool) {
+	queryLimit := 1000 // constant
+
+	// Parameters validation
+	if requestedIteration < 0 {
+		if isRootDebug {
+			loggers.debug.Printf("Error: requested iteration (%d) is negative\n", requestedIteration)
+		}
+		return "", "", false
+	}
+
+	if totalNbrIssue < 0 {
+		if isRootDebug {
+			loggers.debug.Printf("Error: total number of issues (%d) is negative\n", totalNbrIssue)
+		}
+		return "", "", false
+	}
+
+	if totalNbrIssue > (28 * queryLimit) {
+		if isRootDebug {
+			loggers.debug.Printf("Error: requested iteration (%d) is greater than what we can handle (28 * %d)\n", requestedIteration, queryLimit)
+		}
+		return "", "", false
+	}
+
+	//load short month in a time structure and implicitly validate it
+	inputDate, err := time.Parse("2006-01", shortMonth)
+	if err != nil {
+		if isRootDebug {
+			loggers.debug.Printf("Unexpected error parsing short month (%v)\n", err)
+		}
+		return "", "", false
+	}
+
+	// *** Let's go ****
+
+	//retrieve the year and month in time structure
+	inputYear, inputMonth, _ := inputDate.Date()
+
+	// Get the first and last day of the month we are looking at
+	currentLocation := inputDate.Location()
+	firstOfMonth := time.Date(inputYear, inputMonth, 1, 0, 0, 0, 0, currentLocation)
+	lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
+
+	if totalNbrIssue < queryLimit {
+		// we convert the time structs to strings
+		startDate = firstOfMonth.Format("2006-01-02")
+		endDate = lastOfMonth.Format("2006-01-02")
+		moreIteration = false
+
+		//There must be a single iteration
+		if requestedIteration != 0 {
+			if isRootDebug {
+				loggers.debug.Printf("Unexpected error: iteration number (%d) should be equal to 0\n", requestedIteration)
+			}
+			return "", "", false
+		}
+	} else {
+		// compute the total number of iteration required
+		totalIterations := int(totalNbrIssue/queryLimit) + 1
+		if requestedIteration > totalIterations {
+			if isRootDebug {
+				loggers.debug.Printf("Error: requested iteration (%d) is greater than the total number of iteration (%d)\n", requestedIteration, totalIterations)
+			}
+			return "", "", false
+		}
+		fmt.Printf("Result: %d\n", totalIterations)
+		numberOfDaysInMonth := lastOfMonth.Day()
+		fmt.Printf("Number of days in month: %d\n", numberOfDaysInMonth)
+		daysPerIterations := int(numberOfDaysInMonth / totalIterations)
+
+		//compute the iteration start date
+		iterationStartDay := (daysPerIterations * requestedIteration) +1
+		fmt.Printf("Iteration start day: %d\n", iterationStartDay)
+		startOfIterationDate := time.Date(inputYear, inputMonth, iterationStartDay, 0, 0, 0, 0, currentLocation)
+		startDate = startOfIterationDate.Format("2006-01-02")
+
+		//compute the iteration end date
+		iterationEndDay := daysPerIterations + (daysPerIterations * requestedIteration)
+		fmt.Printf("Iteration End Date: %d\n", iterationEndDay)
+		endOfIterationDate := time.Date(inputYear, inputMonth, iterationEndDay, 0, 0, 0, 0, currentLocation)
+		endDate = endOfIterationDate.Format("2006-01-02")
+
+		//did we reach the last iteration?
+		if (requestedIteration + 1) == totalIterations {
+			moreIteration = false
+		} else {
+			moreIteration = true
+		}
+
+	}
+
+	if isRootDebug {
+		loggers.debug.Printf("Iteration start: %s end: %s has more iterations: %v\n", startDate, endDate, moreIteration)
+	}
+	return startDate, endDate, moreIteration
+}
+
 // returns the start and end day for a given month (YYYY-MM)
 func getStartAndEndOfMonth(shortMonth string) (startDate string, endDate string) {
 	//load short month in a time structure
