@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
@@ -132,8 +133,15 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 	return nbrOfComments
 }
 
+//GitHub Graphql query. Test at https://docs.github.com/en/graphql/overview/explorer
 /*
 {
+  rateLimit {
+    limit
+    cost
+    remaining
+    resetAt
+  }
   repository(name: "flecli", owner: "on4kjm") {
     pullRequest(number: 1) {
       reviews(first: 100) {
@@ -203,8 +211,10 @@ var prQuery2 struct {
 		} `graphql:"pullRequest(number: $pr)"`
 	} `graphql:"repository(owner: $owner, name: $name)"`
 	RateLimit struct {
+		Limit     int
 		Cost      int
 		Remaining int
+		ResetAt   time.Time
 	}
 }
 
@@ -221,7 +231,7 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	//Check whether we have enough  quota left and wait if necessary
 	// only if we are dealing with a PR list file bigger than the quota limit.
 	if globalIsBigFile {
-		checkIfSufficientQuota(2)
+		checkIfSufficientQuota(5)
 	}
 
 	variables := map[string]interface{}{
@@ -304,6 +314,9 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 		loggers.debug.Printf("Nbr PR Reviews: %d\n", len(prQuery2.Repository.PullRequest.Reviews.Nodes))
 		loggers.debug.Printf("Grand total de reviews: %d\n", totalComments)
 	}
+
+	checkIfSufficientQuota_2(2, prQuery2.RateLimit.Remaining, prQuery2.RateLimit.Limit, prQuery2.RateLimit.ResetAt)
+
 	return totalComments, output_slice
 }
 

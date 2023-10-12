@@ -233,6 +233,9 @@ func performAction(inputFile string) {
 		isAppend = true
 	}
 
+	//check if we have enough quota left to process the whole file
+	checkIfSufficientQuota(len(prList))
+
 	var bar *progressbar.ProgressBar
 	if !isVerbose {
 		bar = progressbar.Default(int64(len(prList)))

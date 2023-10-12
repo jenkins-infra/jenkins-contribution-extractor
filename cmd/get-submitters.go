@@ -303,8 +303,8 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 				if regexpApp.MatchString(singlePr.Node.PullRequest.Author.ResourcePath) {
 					if isRootDebug {
 						loggers.debug.Printf("   %d-%d (%d/%d)  Skipping %s because user %s is an application.\n",
-							i, ii, (i*100)+ii, totalIssues, 
-							singlePr.Node.PullRequest.Url, 
+							i, ii, (i*100)+ii, totalIssues,
+							singlePr.Node.PullRequest.Url,
 							singlePr.Node.PullRequest.Author.ResourcePath)
 					}
 					continue
@@ -317,7 +317,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 					if singlePr.Node.PullRequest.State == "CLOSED" {
 						if isRootDebug {
 							loggers.debug.Printf("   %d-%d (%d/%d)  Skipping %s because it is CLOSED\n",
-								i, ii, (i*100)+ii, totalIssues,singlePr.Node.PullRequest.Url)
+								i, ii, (i*100)+ii, totalIssues, singlePr.Node.PullRequest.Url)
 						}
 						continue
 					}
