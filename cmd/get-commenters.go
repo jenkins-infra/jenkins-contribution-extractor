@@ -140,19 +140,23 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 		fmt.Println("  - At least one Pull Request data available")
 	}
 
+	// FIXME: the org should be a parameter
 	var prList []string
-	org_regexp, _ := regexp.Compile(`^(jenkinsci|jenkins-infra)$`)
+	org_regexp, _ := regexp.Compile(`^(jenkinsci|jenkins-infra|updatecli|gradle)$`)
 	prj_regexp, _ := regexp.Compile(`^[\w-\.]+$`) // see https://stackoverflow.com/questions/59081778/rules-for-special-characters-in-github-repository-name
 	pr_regexp, _ := regexp.Compile(`^\d+$`)
 
 	// Check the loaded data
 	for _, dataLine := range records {
 
-		// Org must be within list (jenkinsci and jenkins_infra)
+		// Org must be within list (jenkinsci and jenkins_infra) or overwritten
 		org := dataLine[0]
 		if !org_regexp.MatchString(strings.ToLower(org)) {
 			if isVerbose {
-				fmt.Printf(" Error: ORG field \"%s\" is not the expected value (\"jenkinsci\" or \"jenkins-infra\")", org)
+				fmt.Printf(" Error: ORG field \"%s\" is not the expected value (\"jenkinsci\", \"jenkins-infra\", \"updatecli\", or \"gradle\")", org)
+			}
+			if isRootDebug{
+				loggers.debug.Printf(" Error: ORG field \"%s\" is not the expected value (\"jenkinsci\", \"jenkins-infra\", \"updatecli\", or \"gradle\")", org)
 			}
 			return nil, false
 		}
@@ -163,6 +167,9 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 			if isVerbose {
 				fmt.Printf(" Error: PRJ field \"%s\" is not of the expected format", prj)
 			}
+			if isRootDebug{
+				loggers.debug.Printf(" Error: PRJ field \"%s\" is not of the expected format", prj)
+			}
 			return nil, false
 		}
 
@@ -171,6 +178,9 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 		if !pr_regexp.MatchString(prNbr) {
 			if isVerbose {
 				fmt.Printf(" Error: PR field \"%s\" is not a (positive) number", prNbr)
+			}
+			if isRootDebug{
+				loggers.debug.Printf(" Error: PR field \"%s\" is not a (positive) number", prNbr)
 			}
 			return nil, false
 		}
