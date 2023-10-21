@@ -132,9 +132,9 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 		return nil, false
 	}
 
-	if len(records) < 2 {
+	if len(records) < 1 {
 		fmt.Printf("Error: No data available after the header\n")
-		return nil, false
+		return nil, true
 	}
 	if isVerbose {
 		fmt.Println("  - At least one Pull Request data available")
