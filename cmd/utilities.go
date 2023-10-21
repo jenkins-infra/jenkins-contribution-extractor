@@ -152,8 +152,8 @@ func fileExist(fileName string) bool {
 
 // Load the GitHub token from the specified environment variable
 func loadGitHubToken(envVariableName string) string {
-	token := os.Getenv(envVariableName)
-	if token == "" {
+	token, found := os.LookupEnv(envVariableName)
+	if !found {
 		fmt.Println("Unauthorized: No token present")
 		//This is a major error: we crash out of the program
 		os.Exit(0)
