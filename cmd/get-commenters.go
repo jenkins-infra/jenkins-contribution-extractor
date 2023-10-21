@@ -132,9 +132,9 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 		return nil, false
 	}
 
-	if len(records) < 2 {
+	if len(records) < 1 {
 		fmt.Printf("Error: No data available after the header\n")
-		return nil, false
+		return nil, true
 	}
 	if isVerbose {
 		fmt.Println("  - At least one Pull Request data available")
@@ -152,7 +152,7 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 			if isVerbose {
 				fmt.Printf(" Error: ORG field \"%s\" doesn't seem to be a valid GitHub org.\n", org)
 			}
-			if isRootDebug{
+			if isRootDebug {
 				loggers.debug.Printf(" Error: ORG field \"%s\" doesn't seem to be a valid GitHub org.\n", org)
 			}
 			return nil, false
@@ -164,7 +164,7 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 			if isVerbose {
 				fmt.Printf(" Error: PRJ field \"%s\" is not of the expected format", prj)
 			}
-			if isRootDebug{
+			if isRootDebug {
 				loggers.debug.Printf(" Error: PRJ field \"%s\" is not of the expected format", prj)
 			}
 			return nil, false
@@ -176,7 +176,7 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 			if isVerbose {
 				fmt.Printf(" Error: PR field \"%s\" is not a (positive) number", prNbr)
 			}
-			if isRootDebug{
+			if isRootDebug {
 				loggers.debug.Printf(" Error: PR field \"%s\" is not a (positive) number", prNbr)
 			}
 			return nil, false

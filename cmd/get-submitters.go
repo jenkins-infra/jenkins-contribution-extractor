@@ -146,21 +146,15 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 		isAppend = true
 	}
 
-	nbrOfPRs := len(output_data_list)
-	if nbrOfPRs > 0 {
+	// We make no difference  whether data was found or not
 
-		// Creates, overwrites, or opens for append depending on the combination
-		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, globalIsNoHeader)
-		defer out.Close()
+	// Creates, overwrites, or opens for append depending on the combination
+	out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, globalIsNoHeader)
+	defer out.Close()
 
-		header := "org,repository,number,url,state,created_at,merged_at,user.login,month_year,title"
-		writeCSVtoFile(out, isAppend, newIsNoHeader, header, output_data_list)
-		out.Close()
-	} else {
-		if isVerbose {
-			fmt.Println("   No comments found for PR, skipping...")
-		}
-	}
+	header := "org,repository,number,url,state,created_at,merged_at,user.login,month_year,title"
+	writeCSVtoFile(out, isAppend, newIsNoHeader, header, output_data_list)
+	out.Close()
 
 	return nil
 }
