@@ -80,7 +80,7 @@ func Test_getTotalNumberOfItems(t *testing.T) {
 // 		{
 // 			"test run for debug",
 // 			args{
-// 				searchedOrg:   "jenkinsci",
+// 				searchedOrg:   "on4kjm",
 // 				searchedMonth: "2020-01",
 // 			},
 // 			false,
