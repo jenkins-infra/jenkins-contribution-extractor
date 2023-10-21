@@ -101,8 +101,6 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 
 	var output_data_list []string
 
-	// FIXME: handle the case where nbrOfItems is 0
-
 	if nbrOfItems > 1000 {
 		hasMore := true
 		i := 0
