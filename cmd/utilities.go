@@ -156,7 +156,7 @@ func loadGitHubToken(envVariableName string) string {
 	if !found {
 		fmt.Println("Unauthorized: No token present")
 		//This is a major error: we crash out of the program
-		os.Exit(0)
+		log.Fatal("GitHub token not found!")
 	}
 	return token
 }
