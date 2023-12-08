@@ -156,7 +156,7 @@ func loadGitHubToken(envVariableName string) string {
 	if !found {
 		fmt.Println("Unauthorized: No token present")
 		//This is a major error: we crash out of the program
-		os.Exit(0)
+		log.Fatal("GitHub token not found!")
 	}
 	return token
 }
@@ -232,6 +232,15 @@ func isValidOrgFormat(input string) bool {
 	}
 
 	return true
+}
+
+// checks whether the user is an application based on the URL
+func isUserBot(url string) bool {
+	if strings.HasPrefix(strings.ToLower(url), "https://github.com/apps/") {
+		return true
+	} else {
+		return false
+	}
 }
 
 // Computes the start and end date based on the total number of issues returned by query

@@ -173,6 +173,36 @@ var testResult5 = []string{
 	"\"jenkinsci/credentials-plugin/475\",\"jtnord\",\"2023-09\"",
 }
 
+//bot test
+var testResult6 = []string{
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"dwnusbaum\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"NicuPascu\",\"2020-02\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-03\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"bitwiseman\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"bitwiseman\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"olamy\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-05\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"bitwiseman\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-04\"",
+}
+
 func Test_fetchComments_alt(t *testing.T) {
 	type args struct {
 		org string
@@ -202,6 +232,15 @@ func Test_fetchComments_alt(t *testing.T) {
 				pr:  51,
 			},
 			9, testResult2,
+		},
+		{
+			"PR with bot user",
+			args{
+				org: "jenkinsci",
+				prj: "blueocean-plugin",
+				pr:  2050,
+			},
+			26, testResult6,
 		},
 		// jenkins-infra/helm-charts/pull/586
 		{

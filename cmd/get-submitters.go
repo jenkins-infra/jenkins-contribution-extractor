@@ -194,7 +194,8 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 							Repository struct {
 								Name  string
 								Owner struct {
-									Login string
+									Login      string
+									__typename string
 								}
 							}
 							Author struct {
@@ -464,6 +465,7 @@ func getTotalNumberOfItems(searchedOrg string, searchedMonth string) (int, error
             name
             owner {
               login
+			  __typename
             }
           }
           number
