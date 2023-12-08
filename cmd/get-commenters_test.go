@@ -40,10 +40,10 @@ func Test_loadPrListFile(t *testing.T) {
 		{
 			"test empty file",
 			args{
-				fileName: "../test-data/empty-submission-list.csv",
+				fileName:  "../test-data/empty-submission-list.csv",
 				isVerbose: true,
 			},
-			nil,true,
+			nil, true,
 		},
 		// {
 		// 	"test file with one data line",

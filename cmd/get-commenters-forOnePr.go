@@ -187,6 +187,7 @@ var prQuery2 struct {
 					Body      string
 					Author    struct {
 						Login string
+						Url   string
 					}
 				}
 			} `graphql:"comments(first: 100)"`
@@ -196,6 +197,7 @@ var prQuery2 struct {
 					BodyText  string
 					Author    struct {
 						Login string
+						Url   string
 					}
 					Comments struct {
 						Nodes []struct {
@@ -203,6 +205,7 @@ var prQuery2 struct {
 							Body      string
 							Author    struct {
 								Login string
+								Url   string
 							}
 						}
 					} `graphql:"comments(first: 100)"`
@@ -253,10 +256,16 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 	var output_slice []string
 
 	for i, comment := range prQuery2.Repository.PullRequest.Comments.Nodes {
+
 		//When there is no info about the user, it means it has been deleted
 		author := comment.Author.Login
 		if author == "" {
 			author = "deleted_user"
+		}
+
+		// exclude bots
+		if isUserBot(comment.Author.Url) {
+			continue
 		}
 
 		output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))
@@ -276,6 +285,11 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 			author = "deleted_user"
 		}
 
+		// exclude bots
+		if isUserBot(comment.Author.Url) {
+			continue
+		}
+
 		if isDebugGet {
 			loggers.debug.Printf("%d. %s, %s, \"%s\"\n", i+1, author, comment.CreatedAt.Format(dbgDateFormat), cleanBody(comment.BodyText))
 		}
@@ -289,6 +303,11 @@ func fetchComments_v4(org string, prj string, pr int) (nbrComment int, output []
 			author := comment.Author.Login
 			if author == "" {
 				author = "deleted_user"
+			}
+
+			// exclude bots
+			if isUserBot(comment.Author.Url) {
+				continue
 			}
 
 			output_slice = append(output_slice, createRecord(prSpec, author, comment.CreatedAt))

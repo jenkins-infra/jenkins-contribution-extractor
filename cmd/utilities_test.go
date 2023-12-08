@@ -540,3 +540,50 @@ func Test_splitPeriodForMaxQueryItem(t *testing.T) {
 		})
 	}
 }
+
+func Test_isUserBot(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"application",
+			args{
+				url: "https://github.com/apps/codeclimate",
+			},
+			true,
+		},
+		{
+			"application, upper case",
+			args{
+				url: "HTTPS://GITHUB.com/APPS/CODECLIMAT",
+			},
+			true,
+		},
+		{
+			"User",
+			args{
+				url: "https://github.com/tofanadrian3000",
+			},
+			false,
+		},
+		{
+			"Empty URL",
+			args{
+				url: "",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isUserBot(tt.args.url); got != tt.want {
+				t.Errorf("isUserBot() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
