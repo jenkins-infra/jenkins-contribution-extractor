@@ -192,7 +192,7 @@ func truncateString(input string, max int) (otput string) {
 	return input
 }
 
-// Checks whether the input is formatted as a GitHub user or Organization
+// Checks whether the input is a month in the expected format
 func isValidMonthFormat(input string) bool {
 	if input == "" {
 		if isVerbose {
