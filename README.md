@@ -1,5 +1,5 @@
 # jenkins-stats
-counts comments on a given PR
+Retrieves Jenkins Community related data points that help to evaluate community health.
 
 ## installation
 For MacOS users, `homebrew` is the easiest installation method.
