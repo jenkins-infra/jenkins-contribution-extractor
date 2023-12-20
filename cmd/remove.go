@@ -22,7 +22,9 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -32,9 +34,9 @@ var remove_requireBackup bool
 
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
-	Use:   "remove [user] [filename]",
+	Use:   "remove <user> <filename>",
 	Short: "Removes given user's data in CSV",
-	Long: `This command will remove every data line for the user passed as an argument from the data CSV.
+	Long: `This command will remove, for a given user, every data line from the data CSV.
 A backup of the treated file can be requested.
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -62,7 +64,7 @@ func init() {
 	removeCmd.Flags().BoolVarP(&remove_requireBackup, "backup", "b", true, "Make a backup of the original file")
 }
 
-// Main function of the command
+// Main function of the REMOVE command
 func performRemove(githubUser string, fileToClean_name string, isBackup bool) error {
 
 	//test whether it is a valid GitHub user
@@ -70,12 +72,53 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 		return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
 	}
 
-	//TODO: Do we have an existing file to clean ?
+	//Do we have an existing file to clean ?
 	if !fileExist(fileToClean_name){
 		return fmt.Errorf("ERROR: %s is not an existing file.\n", githubUser)
 	}
 
-	//TODO: what type is it.
+	//VERBOSE treatment
+
+	//Load input file
+	//remove user data (in, type, user) out
+	//if backup
+	//  compute backup filename
+	//  write in as the backup file
+	//endif
+	//write out (cleaned file)
 
 	return nil
+}
+
+//TODO: Implement test
+//load input file
+func loadCSVtoClean(fileName string) (error, [][]string){
+	
+	f, err := os.Open(fileName)
+	if err != nil {
+		return fmt.Errorf("Unable to read input file %s: %v\n", fileName, err), nil
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+
+	if isVerbose {
+		fmt.Printf("Loading header of the file to clean (%s) \n", fileName)
+	}
+
+	headerLine, err1 := r.Read()
+	if err1 != nil {
+		return fmt.Errorf("Unexpected error loading %s: %v\n", fileName, err), nil
+	}
+
+	fmt.Printf("header: %v", headerLine)
+
+	//referenceSubmitterCSVheader
+
+	if isVerbose {
+		fmt.Printf("Loading the file to clean (%s) \n", fileName)
+	}
+
+	return nil,nil
+
 }

@@ -82,18 +82,9 @@ To extract the commenters for a single PR, use the "forPR" sub-command.
 func init() {
 	getCmd.AddCommand(commentersCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// commentersCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// commentersCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-var referenceCSVheader = []string{"org", "repository", "number", "url", "state", "created_at", "merged_at", "user.login", "month_year", "title"}
+var referenceSubmitterCSVheader = []string{"org", "repository", "number", "url", "state", "created_at", "merged_at", "user.login", "month_year", "title"}
 
 // Loads the data from a file and try to parse it as a CSV
 func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
@@ -117,7 +108,7 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 		fmt.Println("Checking input file")
 	}
 
-	if !validateHeader(headerLine, referenceCSVheader, isVerbose) {
+	if !validateHeader(headerLine, referenceSubmitterCSVheader, isVerbose) {
 		fmt.Println(" Error: header is incorrect.")
 		return nil, false
 	} else {
