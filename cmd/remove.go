@@ -22,11 +22,12 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
 
-//Flag indicating whether a backup of the file is required.
+// Flag indicating whether a backup of the file is required.
 var remove_requireBackup bool
 
 // removeCmd represents the remove command
@@ -58,19 +59,23 @@ func init() {
 	rootCmd.AddCommand(removeCmd)
 
 	// Add local flag
-	removeCmd.Flags().BoolVarP(&remove_requireBackup,"backup", "b", true, "Make a backup of the original file")
+	removeCmd.Flags().BoolVarP(&remove_requireBackup, "backup", "b", true, "Make a backup of the original file")
 }
-
-// isValidOrgFormat()
 
 // Main function of the command
 func performRemove(githubUser string, fileToClean_name string, isBackup bool) error {
 
-	//TODO: test whether it is a valid GitHub user
+	//test whether it is a valid GitHub user
+	if !isValidOrgFormat(githubUser) {
+		return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
+	}
 
 	//TODO: Do we have an existing file to clean ?
+	if !fileExist(fileToClean_name){
+		return fmt.Errorf("ERROR: %s is not an existing file.\n", githubUser)
+	}
 
 	//TODO: what type is it.
-	
+
 	return nil
 }

@@ -43,3 +43,42 @@ func Test_ExecuteMustHaveTwoArguments(t *testing.T) {
 	lines := strings.Split(actual.String(), "\n")
 	assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
 }
+
+func Test_performRemove(t *testing.T) {
+	type args struct {
+		githubUser       string
+		fileToClean_name string
+		isBackup         bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"Invalid GitHub user",
+			args{
+				githubUser:       "ax_4!",
+				fileToClean_name: "",
+				isBackup:         true,
+			},
+			true,
+		},
+		{
+			"Non existent file",
+			args{
+				githubUser:       "jenkinsci",
+				fileToClean_name: "unexistantFile.txt",
+				isBackup:         true,
+			},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := performRemove(tt.args.githubUser, tt.args.fileToClean_name, tt.args.isBackup); (err != nil) != tt.wantErr {
+				t.Errorf("performRemove() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
