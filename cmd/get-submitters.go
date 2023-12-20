@@ -194,7 +194,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 							Repository struct {
 								Name  string
 								Owner struct {
-									Login      string
+									Login string
 								}
 							}
 							Author struct {

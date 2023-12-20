@@ -173,7 +173,7 @@ var testResult5 = []string{
 	"\"jenkinsci/credentials-plugin/475\",\"jtnord\",\"2023-09\"",
 }
 
-//bot test
+// bot test
 var testResult6 = []string{
 	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",
 	"\"jenkinsci/blueocean-plugin/2050\",\"stuartrowe\",\"2020-02\"",

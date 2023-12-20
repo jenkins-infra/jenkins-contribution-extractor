@@ -25,21 +25,21 @@ import (
 	"bytes"
 	"strings"
 	"testing"
-	// "github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/assert"
 )
+
 func Test_ExecuteMustHaveTwoArguments(t *testing.T) {
 	actual := new(bytes.Buffer)
 	rootCmd.SetOut(actual)
 	rootCmd.SetErr(actual)
 	rootCmd.SetArgs([]string{"remove", "A"})
 	error := rootCmd.Execute()
-	if error != nil {
-		//Error is expected
-		lines := strings.Split(actual.String(),"\n")
-		println(lines[0]) //Error: requires at least 2 arg(s), only received 1
-		return
-	} else {
-		t.Error("Didn't fail as expected.\n")
-	}
 
+	assert.Error(t, error, "Function call should have failed")
+
+	//Error is expected
+	expectedMsg := "Error: requires at least 2 arg(s), only received 1"
+	lines := strings.Split(actual.String(), "\n")
+	assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
 }

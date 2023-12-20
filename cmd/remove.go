@@ -72,5 +72,4 @@ func init() {
 	// removeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-
 //isValidOrgFormat()
