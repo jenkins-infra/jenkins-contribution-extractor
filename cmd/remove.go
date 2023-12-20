@@ -22,10 +22,12 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 
 	"github.com/spf13/cobra"
 )
+
+//Flag indicating whether a backup of the file is required.
+var remove_requireBackup bool
 
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
@@ -39,18 +41,12 @@ A backup of the treated file can be requested.
 		if err := cobra.MinimumNArgs(2)(cmd, args); err != nil {
 			return err
 		}
-		if !isValidOrgFormat(args[0]) {
-			return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", args[0])
-		}
-
-		if !isValidMonthFormat(args[1]) {
-			return fmt.Errorf("ERROR: %s is not a valid month (should be \"YYYY-MM\").\n", args[1])
-		}
-
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := performSearch(args[0], args[1])
+		// First argument is the GitHub user to remove
+		// Second argument is the filename where to remove the user
+		err := performRemove(args[0], args[1], remove_requireBackup)
 		if err != nil {
 			return err
 		}
@@ -61,15 +57,20 @@ A backup of the treated file can be requested.
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// removeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// removeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Add local flag
+	removeCmd.Flags().BoolVarP(&remove_requireBackup,"backup", "b", true, "Make a backup of the original file")
 }
 
-//isValidOrgFormat()
+// isValidOrgFormat()
+
+// Main function of the command
+func performRemove(githubUser string, fileToClean_name string, isBackup bool) error {
+
+	//TODO: test whether it is a valid GitHub user
+
+	//TODO: Do we have an existing file to clean ?
+
+	//TODO: what type is it.
+	
+	return nil
+}
