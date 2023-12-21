@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"bytes"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -78,6 +79,39 @@ func Test_performRemove(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := performRemove(tt.args.githubUser, tt.args.fileToClean_name, tt.args.isBackup); (err != nil) != tt.wantErr {
 				t.Errorf("performRemove() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_loadCSVtoClean(t *testing.T) {
+	type args struct {
+		fileName string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    [][]string
+		wantErr bool
+	}{
+		{
+			"load small submission list",
+			args{
+				fileName: "../test-data/small-submission-list.csv",
+			},
+			nil,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := loadCSVtoClean(tt.args.fileName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("loadCSVtoClean() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("loadCSVtoClean() = %v, want %v", got, tt.want)
 			}
 		})
 	}

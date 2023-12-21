@@ -122,6 +122,7 @@ func getCommenters(prSpec string, isAppend bool, isNoHeader bool, outputFileName
 		out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, isNoHeader)
 		defer out.Close()
 
+		//TODO: Refactor
 		header := "PR_ref,commenter,month"
 		writeCSVtoFile(out, isAppend, newIsNoHeader, header, output_data_list)
 		out.Close()

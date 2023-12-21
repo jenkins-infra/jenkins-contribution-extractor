@@ -84,7 +84,9 @@ func init() {
 
 }
 
+// TODO: refactor this
 var referenceSubmitterCSVheader = []string{"org", "repository", "number", "url", "state", "created_at", "merged_at", "user.login", "month_year", "title"}
+var referenceCommenterCSVheader = []string{"PR_ref", "commenter", "month"}
 
 // Loads the data from a file and try to parse it as a CSV
 func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
@@ -183,25 +185,6 @@ func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {
 	}
 
 	return prList, true
-}
-
-// Checks whether the retrieved header is equivalent to the reference header
-func validateHeader(header []string, referenceHeader []string, isVerbose bool) bool {
-	if len(header) != len(referenceHeader) {
-		if isVerbose {
-			fmt.Printf(" Error: field number mismatch (found %d, wanted %d)\n", len(header), len(referenceHeader))
-		}
-		return false
-	}
-	for i, v := range header {
-		if v != referenceHeader[i] {
-			if isVerbose {
-				fmt.Printf(" Error: not the expected header field at column %d (found \"%v\", wanted \"%v\")\n", i+1, v, referenceHeader[i])
-			}
-			return false
-		}
-	}
-	return true
 }
 
 // **************

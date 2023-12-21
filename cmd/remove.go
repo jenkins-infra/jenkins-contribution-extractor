@@ -57,6 +57,7 @@ A backup of the treated file can be requested.
 	},
 }
 
+//Initialises COBRA for this command
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
@@ -73,7 +74,7 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	}
 
 	//Do we have an existing file to clean ?
-	if !fileExist(fileToClean_name){
+	if !fileExist(fileToClean_name) {
 		return fmt.Errorf("ERROR: %s is not an existing file.\n", githubUser)
 	}
 
@@ -90,10 +91,10 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	return nil
 }
 
-//TODO: Implement test
-//load input file
-func loadCSVtoClean(fileName string) (error, [][]string){
-	
+// TODO: return file type
+// load input file
+func loadCSVtoClean(fileName string) (error, [][]string) {
+
 	f, err := os.Open(fileName)
 	if err != nil {
 		return fmt.Errorf("Unable to read input file %s: %v\n", fileName, err), nil
@@ -111,14 +112,46 @@ func loadCSVtoClean(fileName string) (error, [][]string){
 		return fmt.Errorf("Unexpected error loading %s: %v\n", fileName, err), nil
 	}
 
-	fmt.Printf("header: %v", headerLine)
-
-	//referenceSubmitterCSVheader
+	csvType, err2 := getCsvTypeFromHeader(headerLine)
+	if err2 != nil {
+		return err2, nil
+	}
+	fmt.Printf("Detected file type is \"%s\"\n", csvType)
 
 	if isVerbose {
 		fmt.Printf("Loading the file to clean (%s) \n", fileName)
 	}
 
-	return nil,nil
+	return nil, nil
 
+}
+
+// Try to figure out the type of CSV file based on the header
+func getCsvTypeFromHeader(headerToTest []string) (CsvType, error) {
+	if validateHeader(headerToTest, referenceSubmitterCSVheader, false) {
+		return CsvTypeSubmission, nil
+	}
+	if validateHeader(headerToTest, referenceCommenterCSVheader, false) {
+		return CsvTypeComment, nil
+	}
+
+	return CsvTypeUnknown, fmt.Errorf("Unknown CSV type")
+}
+
+type CsvType uint8
+
+const (
+	CsvTypeSubmission CsvType = iota
+	CsvTypeComment
+	CsvTypeUnknown
+)
+
+func (s CsvType) String() string {
+	switch s {
+	case CsvTypeSubmission:
+		return "Submissions"
+	case CsvTypeComment:
+		return "Comments"
+	}
+	return "unknown"
 }
