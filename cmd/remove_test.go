@@ -84,6 +84,26 @@ func Test_performRemove(t *testing.T) {
 	}
 }
 
+var expectedSubmittersList = []string{
+	"org,repository,number,url,state,created_at,merged_at,user.login,month_year,title",
+	"\"jenkinsci\",\"embeddable-build-status-plugin\",229,\"https://github.com/jenkinsci/embeddable-build-status-plugin/pull/229\",\"closed\",\"2023-08-11T21:18:19Z\",\"2023-08-12T03:55:01Z\",\"MarkEWaite\",\"2023-08\",\"Test with Java 21\"",
+	"\"jenkinsci\",\"ldap-plugin\",248,\"https://github.com/jenkinsci/ldap-plugin/pull/248\",\"closed\",\"2023-08-12T12:09:11Z\",\"2023-09-22T16:21:31Z\",\"NotMyFault\",\"2023-08\",\"Test on Java 21\"",
+	"\"jenkinsci\",\"ecu-test-execution-plugin\",54,\"https://github.com/jenkinsci/ecu-test-execution-plugin/pull/54\",\"closed\",\"2023-08-07T10:06:24Z\",\"2023-09-22T09:03:34Z\",\"MxEh-TT\",\"2023-08\",\"inital package check implementation (#53)\"",
+	"\"jenkinsci\",\"build-blocker-plugin\",19,\"https://github.com/jenkinsci/build-blocker-plugin/pull/19\",\"closed\",\"2023-08-07T06:35:02Z\",\"2023-09-18T13:42:06Z\",\"olamy\",\"2023-08\",\"add @Symbol to be able to easily use the plugin in a declarative pipeline\"",
+	"\"jenkinsci\",\"credentials-plugin\",475,\"https://github.com/jenkinsci/credentials-plugin/pull/475\",\"closed\",\"2023-08-12T08:16:01Z\",\"2023-09-21T16:16:52Z\",\"NotMyFault\",\"2023-08\",\"Test on Java 21\"",
+	"\"jenkinsci\",\"ssh-credentials-plugin\",179,\"https://github.com/jenkinsci/ssh-credentials-plugin/pull/179\",\"closed\",\"2023-08-12T08:32:14Z\",\"2023-09-21T16:12:07Z\",\"NotMyFault\",\"2023-08\",\"Test on Java 21\"",
+}
+
+// Removed "olamy"
+var cleanedSubmittersList = []string{
+	"org,repository,number,url,state,created_at,merged_at,user.login,month_year,title",
+	"\"jenkinsci\",\"embeddable-build-status-plugin\",229,\"https://github.com/jenkinsci/embeddable-build-status-plugin/pull/229\",\"closed\",\"2023-08-11T21:18:19Z\",\"2023-08-12T03:55:01Z\",\"MarkEWaite\",\"2023-08\",\"Test with Java 21\"",
+	"\"jenkinsci\",\"ldap-plugin\",248,\"https://github.com/jenkinsci/ldap-plugin/pull/248\",\"closed\",\"2023-08-12T12:09:11Z\",\"2023-09-22T16:21:31Z\",\"NotMyFault\",\"2023-08\",\"Test on Java 21\"",
+	"\"jenkinsci\",\"ecu-test-execution-plugin\",54,\"https://github.com/jenkinsci/ecu-test-execution-plugin/pull/54\",\"closed\",\"2023-08-07T10:06:24Z\",\"2023-09-22T09:03:34Z\",\"MxEh-TT\",\"2023-08\",\"inital package check implementation (#53)\"",
+	"\"jenkinsci\",\"credentials-plugin\",475,\"https://github.com/jenkinsci/credentials-plugin/pull/475\",\"closed\",\"2023-08-12T08:16:01Z\",\"2023-09-21T16:16:52Z\",\"NotMyFault\",\"2023-08\",\"Test on Java 21\"",
+	"\"jenkinsci\",\"ssh-credentials-plugin\",179,\"https://github.com/jenkinsci/ssh-credentials-plugin/pull/179\",\"closed\",\"2023-08-12T08:32:14Z\",\"2023-09-21T16:12:07Z\",\"NotMyFault\",\"2023-08\",\"Test on Java 21\"",
+}
+
 func Test_loadCSVtoClean(t *testing.T) {
 	type args struct {
 		fileName string
@@ -91,27 +111,53 @@ func Test_loadCSVtoClean(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    [][]string
+		want    []string
 		wantErr bool
 	}{
 		{
-			"load small submission list",
-			args{
-				fileName: "../test-data/small-submission-list.csv",
-			},
-			nil,
+			"Happy Case",
+			args{fileName: "../test-data/small-submission-list.csv"},
+			expectedSubmittersList,
 			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := loadCSVtoClean(tt.args.fileName)
+			err, got := loadCSVtoClean(tt.args.fileName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadCSVtoClean() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("loadCSVtoClean() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_cleanCsvList(t *testing.T) {
+	type args struct {
+		csvToCleanList []string
+		githubUser     string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"happy case",
+			args{
+				csvToCleanList: expectedSubmittersList,
+				githubUser: "olamy",
+			},
+			cleanedSubmittersList,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := cleanCsvList(tt.args.csvToCleanList, tt.args.githubUser); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("cleanCsvList() = %v, want %v", got, tt.want)
 			}
 		})
 	}

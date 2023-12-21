@@ -84,9 +84,7 @@ func init() {
 
 }
 
-// TODO: refactor this
 var referenceSubmitterCSVheader = []string{"org", "repository", "number", "url", "state", "created_at", "merged_at", "user.login", "month_year", "title"}
-var referenceCommenterCSVheader = []string{"PR_ref", "commenter", "month"}
 
 // Loads the data from a file and try to parse it as a CSV
 func loadPrListFile(fileName string, isVerbose bool) ([]string, bool) {

@@ -22,9 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/csv"
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -57,7 +58,7 @@ A backup of the treated file can be requested.
 	},
 }
 
-//Initialises COBRA for this command
+// Initialises COBRA for this command
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
@@ -78,9 +79,16 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 		return fmt.Errorf("ERROR: %s is not an existing file.\n", githubUser)
 	}
 
-	//VERBOSE treatment
-
 	//Load input file
+	if isVerbose {
+		fmt.Printf("Loading the file to clean (%s) \n", fileToClean_name)
+	}
+	err, csvToCleanList := loadCSVtoClean(fileToClean_name)
+	if err != nil {
+		return err
+	}
+
+	cleanCsvList(csvToCleanList, githubUser)
 	//remove user data (in, type, user) out
 	//if backup
 	//  compute backup filename
@@ -91,9 +99,21 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	return nil
 }
 
-// TODO: return file type
+//Removes every list item where the gitHub user is present
+func cleanCsvList(csvToCleanList []string, githubUser string) []string{
+	var cleanedList []string
+
+	for _, line := range csvToCleanList {
+		if !strings.Contains(line,githubUser) {
+			cleanedList = append(cleanedList, line)
+		}
+	}
+
+	return cleanedList
+}
+
 // load input file
-func loadCSVtoClean(fileName string) (error, [][]string) {
+func loadCSVtoClean(fileName string) (error, []string) {
 
 	f, err := os.Open(fileName)
 	if err != nil {
@@ -101,57 +121,17 @@ func loadCSVtoClean(fileName string) (error, [][]string) {
 	}
 	defer f.Close()
 
-	r := csv.NewReader(f)
+	var loadedFile []string
 
-	if isVerbose {
-		fmt.Printf("Loading header of the file to clean (%s) \n", fileName)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		loadedFile = append(loadedFile, scanner.Text())
 	}
 
-	headerLine, err1 := r.Read()
-	if err1 != nil {
-		return fmt.Errorf("Unexpected error loading %s: %v\n", fileName, err), nil
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("Error loading \"%s\": %v", fileName, err), nil
 	}
 
-	csvType, err2 := getCsvTypeFromHeader(headerLine)
-	if err2 != nil {
-		return err2, nil
-	}
-	fmt.Printf("Detected file type is \"%s\"\n", csvType)
-
-	if isVerbose {
-		fmt.Printf("Loading the file to clean (%s) \n", fileName)
-	}
-
-	return nil, nil
-
-}
-
-// Try to figure out the type of CSV file based on the header
-func getCsvTypeFromHeader(headerToTest []string) (CsvType, error) {
-	if validateHeader(headerToTest, referenceSubmitterCSVheader, false) {
-		return CsvTypeSubmission, nil
-	}
-	if validateHeader(headerToTest, referenceCommenterCSVheader, false) {
-		return CsvTypeComment, nil
-	}
-
-	return CsvTypeUnknown, fmt.Errorf("Unknown CSV type")
-}
-
-type CsvType uint8
-
-const (
-	CsvTypeSubmission CsvType = iota
-	CsvTypeComment
-	CsvTypeUnknown
-)
-
-func (s CsvType) String() string {
-	switch s {
-	case CsvTypeSubmission:
-		return "Submissions"
-	case CsvTypeComment:
-		return "Comments"
-	}
-	return "unknown"
+	//TODO: did we at least load one line?
+	return nil, loadedFile
 }
