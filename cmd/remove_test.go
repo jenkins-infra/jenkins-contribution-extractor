@@ -120,6 +120,18 @@ func Test_loadCSVtoClean(t *testing.T) {
 			expectedSubmittersList,
 			false,
 		},
+		{
+			"Empty File",
+			args{fileName: "../test-data/empty-submission-list.csv"},
+			nil,
+			true,
+		},
+		{
+			"Inexistent File",
+			args{fileName: "blaahhh.csv"},
+			nil,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -149,7 +161,7 @@ func Test_cleanCsvList(t *testing.T) {
 			"happy case",
 			args{
 				csvToCleanList: expectedSubmittersList,
-				githubUser: "olamy",
+				githubUser:     "olamy",
 			},
 			cleanedSubmittersList,
 		},

@@ -83,33 +83,35 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	if isVerbose {
 		fmt.Printf("Loading the file to clean (%s) \n", fileToClean_name)
 	}
-	err, csvToCleanList := loadCSVtoClean(fileToClean_name)
+	err, csvToClean_List := loadCSVtoClean(fileToClean_name)
 	if err != nil {
 		return err
 	}
 
-	cleanCsvList(csvToCleanList, githubUser)
-	//remove user data (in, type, user) out
-	//if backup
-	//  compute backup filename
-	//  write in as the backup file
-	//endif
-	//write out (cleaned file)
+	// Try to clean the file
+	if isVerbose {
+		fmt.Printf("Removing entries for user \"%s\" \n", githubUser)
+	}
+	cleanedCsv_List := cleanCsvList(csvToClean_List, githubUser)
 
-	return nil
-}
-
-//Removes every list item where the gitHub user is present
-func cleanCsvList(csvToCleanList []string, githubUser string) []string{
-	var cleanedList []string
-
-	for _, line := range csvToCleanList {
-		if !strings.Contains(line,githubUser) {
-			cleanedList = append(cleanedList, line)
-		}
+	//Was it useful ?
+	// cleaned file should be shorter than the initial file
+	if len(cleanedCsv_List) < len(csvToClean_List) {
+		//if backup
+		//  compute backup filename
+		//  write in as the backup file
+		//endif
+		//write out (cleaned file)
+	} else {
+		fmt.Printf("Didn't find an entry for user \"%s\" in file \"%s\" \n", githubUser, fileToClean_name)
 	}
 
-	return cleanedList
+	//If the cleaned file is larger than the original file something went horribly wrong....
+	if len(cleanedCsv_List) > len(csvToClean_List) {
+		return fmt.Errorf("[ERROR] Something went horribly wrong: the cleaned file increased in size !!!!???\n")
+	}
+
+	return nil
 }
 
 // load input file
@@ -132,6 +134,22 @@ func loadCSVtoClean(fileName string) (error, []string) {
 		return fmt.Errorf("Error loading \"%s\": %v", fileName, err), nil
 	}
 
-	//TODO: did we at least load one line?
+	if len(loadedFile) <= 1 {
+		return fmt.Errorf("Error: \"%s\" seems empty. Retrieved %d lines.", fileName, len(loadedFile)), nil
+	}
+
 	return nil, loadedFile
+}
+
+// Removes every list item where the gitHub user is present
+func cleanCsvList(csvToClean_List []string, githubUser string) []string {
+	var cleanedList []string
+
+	for _, line := range csvToClean_List {
+		if !strings.Contains(line, githubUser) {
+			cleanedList = append(cleanedList, line)
+		}
+	}
+
+	return cleanedList
 }
