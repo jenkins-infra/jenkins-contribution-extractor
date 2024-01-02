@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -94,13 +95,20 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	}
 	cleanedCsv_List := cleanCsvList(csvToClean_List, githubUser)
 
+	//TODO: Tell the world how many entries have been removed
+
 	//Was it useful ?
 	// cleaned file should be shorter than the initial file
+	//FIXME: use variables here
 	if len(cleanedCsv_List) < len(csvToClean_List) {
-		//if backup
-		//  compute backup filename
-		//  write in as the backup file
-		//endif
+		if isBackup {
+			backupFileName := compute_removeBackupFileName(fileToClean_name)
+			//write list with no header and no append
+			out, _ := openOutputCSV(backupFileName, false, true)
+			defer out.Close()
+			writeCSVtoFile(out,false,false,"",cleanedCsv_List)
+			out.Close()
+		}
 		//write out (cleaned file)
 	} else {
 		fmt.Printf("Didn't find an entry for user \"%s\" in file \"%s\" \n", githubUser, fileToClean_name)
@@ -152,4 +160,15 @@ func cleanCsvList(csvToClean_List []string, githubUser string) []string {
 	}
 
 	return cleanedList
+}
+
+// Based on a filename, will return a filename to store the backup
+func compute_removeBackupFileName(fileName string) string {
+	//The validity and existence of the data file are assumed to exist
+	//Compute the current backup timestamp "YYYYMMDD_HHMMSS" (to be prepend to the original file name)
+	dt := time.Now()
+	backupTimeStamp := fmt.Sprintf(dt.Format("20060102_150405"))
+	backup_FileName := fmt.Sprintf("removeBackup_%s__%s", backupTimeStamp, fileName)
+
+	return (backup_FileName)
 }

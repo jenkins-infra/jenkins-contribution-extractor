@@ -24,11 +24,20 @@ package cmd
 import (
 	"bytes"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_ComputeRemoveBackupFile(t *testing.T) {
+	backupFileName := compute_removeBackupFileName("testFile.csv")
+
+	result_regexp, _ := regexp.Compile(`^removeBackup_20[0-3][0-9][0-1][0-9][0-3][0-9]_[0-2][0-9][0-5][0-9][0-5][0-9]__testFile\.csv$`)
+
+	assert.True(t, result_regexp.MatchString(backupFileName), "Backup file name (%s) doesn't have the expected format", backupFileName)
+}
 
 func Test_ExecuteMustHaveTwoArguments(t *testing.T) {
 	actual := new(bytes.Buffer)
