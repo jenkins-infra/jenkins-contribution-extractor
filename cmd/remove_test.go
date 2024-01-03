@@ -32,10 +32,12 @@ import (
 )
 
 func Test_ComputeRemoveBackupFile(t *testing.T) {
+	result_regexp, _ := regexp.Compile(`^(.|test_data)/removeBackup_20[0-3][0-9][0-1][0-9][0-3][0-9]_[0-2][0-9][0-5][0-9][0-5][0-9]__testFile\.csv$`)
+
 	backupFileName := compute_removeBackupFileName("testFile.csv")
+	assert.True(t, result_regexp.MatchString(backupFileName), "Backup file name (%s) doesn't have the expected format", backupFileName)
 
-	result_regexp, _ := regexp.Compile(`^removeBackup_20[0-3][0-9][0-1][0-9][0-3][0-9]_[0-2][0-9][0-5][0-9][0-5][0-9]__testFile\.csv$`)
-
+	backupFileName = compute_removeBackupFileName("test_data/testFile.csv")
 	assert.True(t, result_regexp.MatchString(backupFileName), "Backup file name (%s) doesn't have the expected format", backupFileName)
 }
 

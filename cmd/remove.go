@@ -25,6 +25,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ var removeCmd = &cobra.Command{
 	Use:   "remove <user> <filename>",
 	Short: "Removes given user's data in CSV",
 	Long: `This command will remove, for a given user, every data line from the data CSV.
-A backup of the treated file can be requested.
+A backup of the treated file can be requested (default).
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		//call requires two parameters (org and month)
@@ -95,7 +96,6 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	}
 	cleanedCsv_List := cleanCsvList(csvToClean_List, githubUser)
 
-
 	//Was it useful ?
 	// cleaned file should be shorter than the initial file
 	cleanedList_size := len(cleanedCsv_List)
@@ -117,6 +117,8 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 
 		if isVerbose {
 			fmt.Printf("Removed %d lines from \"%s\" and storing... \n", originalList_size-cleanedList_size, fileToClean_name)
+		} else {
+			fmt.Printf("Removed %d line(s) with user \"%s\" from \"%s\"\n", originalList_size-cleanedList_size, githubUser, fileToClean_name)
 		}
 
 		//write list with no header and no append
@@ -182,7 +184,11 @@ func compute_removeBackupFileName(fileName string) string {
 	//Compute the current backup timestamp "YYYYMMDD_HHMMSS" (to be prepend to the original file name)
 	dt := time.Now()
 	backupTimeStamp := fmt.Sprint(dt.Format("20060102_150405"))
-	backup_FileName := fmt.Sprintf("removeBackup_%s__%s", backupTimeStamp, fileName)
+
+	// ext := filepath.Ext(fileName)
+	shortFileName := filepath.Base(fileName)
+	path := filepath.Dir(fileName)
+	backup_FileName := fmt.Sprintf("%s/removeBackup_%s__%s", path, backupTimeStamp, shortFileName)
 
 	return (backup_FileName)
 }
