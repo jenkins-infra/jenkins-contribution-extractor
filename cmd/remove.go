@@ -95,21 +95,35 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	}
 	cleanedCsv_List := cleanCsvList(csvToClean_List, githubUser)
 
-	//TODO: Tell the world how many entries have been removed
 
 	//Was it useful ?
 	// cleaned file should be shorter than the initial file
-	//FIXME: use variables here
-	if len(cleanedCsv_List) < len(csvToClean_List) {
+	cleanedList_size := len(cleanedCsv_List)
+	originalList_size := len(csvToClean_List)
+	if cleanedList_size < originalList_size {
 		if isBackup {
 			backupFileName := compute_removeBackupFileName(fileToClean_name)
+
+			if isVerbose {
+				fmt.Printf("Creating backup file: \"%s\" \n", backupFileName)
+			}
+
 			//write list with no header and no append
 			out, _ := openOutputCSV(backupFileName, false, true)
 			defer out.Close()
-			writeCSVtoFile(out, false, false, "", cleanedCsv_List)
+			writeCSVtoFile(out, false, false, "", csvToClean_List)
 			out.Close()
 		}
-		//write out (cleaned file)
+
+		if isVerbose {
+			fmt.Printf("Removed %d lines from \"%s\" and storing... \n", originalList_size-cleanedList_size, fileToClean_name)
+		}
+
+		//write list with no header and no append
+		cleanedOut, _ := openOutputCSV(fileToClean_name, false, true)
+		defer cleanedOut.Close()
+		writeCSVtoFile(cleanedOut, false, false, "", cleanedCsv_List)
+		cleanedOut.Close()
 	} else {
 		fmt.Printf("Didn't find an entry for user \"%s\" in file \"%s\" \n", githubUser, fileToClean_name)
 	}
