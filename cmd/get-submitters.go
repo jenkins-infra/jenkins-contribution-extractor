@@ -152,6 +152,7 @@ func performSearch(searchedOrg string, searchedMonth string) error {
 	out, newIsNoHeader := openOutputCSV(outputFileName, isAppend, globalIsNoHeader)
 	defer out.Close()
 
+	//TODO: Refactor
 	header := "org,repository,number,url,state,created_at,merged_at,user.login,month_year,title"
 	writeCSVtoFile(out, isAppend, newIsNoHeader, header, output_data_list)
 	out.Close()
@@ -194,7 +195,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 							Repository struct {
 								Name  string
 								Owner struct {
-									Login      string
+									Login string
 								}
 							}
 							Author struct {

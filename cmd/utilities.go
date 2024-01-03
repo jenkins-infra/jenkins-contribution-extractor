@@ -192,7 +192,7 @@ func truncateString(input string, max int) (otput string) {
 	return input
 }
 
-// Checks whether the input is formatted as a GitHub user or Organization
+// Checks whether the input is a month in the expected format
 func isValidMonthFormat(input string) bool {
 	if input == "" {
 		if isVerbose {
@@ -211,7 +211,7 @@ func isValidMonthFormat(input string) bool {
 	return true
 }
 
-// Validates whether the input is correctly formatted as a GitHub user or oganisation
+// Validates whether the input is correctly formatted as a GitHub user or organisation
 func isValidOrgFormat(input string) bool {
 	if input == "" {
 		if isVerbose {
@@ -359,4 +359,24 @@ func getStartAndEndOfMonth(shortMonth string) (startDate string, endDate string)
 	lastOfMonthString := lastOfMonth.Format("2006-01-02")
 
 	return firstOfMonthString, lastOfMonthString
+}
+
+// TODO: test this
+// Checks whether the retrieved header is equivalent to the reference header
+func validateHeader(header []string, referenceHeader []string, isVerbose bool) bool {
+	if len(header) != len(referenceHeader) {
+		if isVerbose {
+			fmt.Printf(" Error: field number mismatch (found %d, wanted %d)\n", len(header), len(referenceHeader))
+		}
+		return false
+	}
+	for i, v := range header {
+		if v != referenceHeader[i] {
+			if isVerbose {
+				fmt.Printf(" Error: not the expected header field at column %d (found \"%v\", wanted \"%v\")\n", i+1, v, referenceHeader[i])
+			}
+			return false
+		}
+	}
+	return true
 }
