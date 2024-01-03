@@ -106,7 +106,7 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 			//write list with no header and no append
 			out, _ := openOutputCSV(backupFileName, false, true)
 			defer out.Close()
-			writeCSVtoFile(out,false,false,"",cleanedCsv_List)
+			writeCSVtoFile(out, false, false, "", cleanedCsv_List)
 			out.Close()
 		}
 		//write out (cleaned file)
@@ -167,7 +167,7 @@ func compute_removeBackupFileName(fileName string) string {
 	//The validity and existence of the data file are assumed to exist
 	//Compute the current backup timestamp "YYYYMMDD_HHMMSS" (to be prepend to the original file name)
 	dt := time.Now()
-	backupTimeStamp := fmt.Sprintf(dt.Format("20060102_150405"))
+	backupTimeStamp := fmt.Sprint(dt.Format("20060102_150405"))
 	backup_FileName := fmt.Sprintf("removeBackup_%s__%s", backupTimeStamp, fileName)
 
 	return (backup_FileName)
