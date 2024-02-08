@@ -211,7 +211,7 @@ func isValidMonthFormat(input string) bool {
 	return true
 }
 
-// Validates whether the input is correctly formatted as a GitHub user or organisation
+// Validates whether the input is correctly formatted as a GitHub user or organization
 func isValidOrgFormat(input string) bool {
 	if input == "" {
 		if isVerbose {
