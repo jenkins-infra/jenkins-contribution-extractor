@@ -304,6 +304,7 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 					}
 					continue
 				} else {
+					//FIXME: check in the list of authors to skip
 					author = singlePr.Node.PullRequest.Author.Login
 				}
 
