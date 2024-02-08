@@ -54,6 +54,14 @@ var prCmd = &cobra.Command{
 			return fmt.Errorf("ERROR: %s is not a valid month (should be \"YYYY-MM\").\n", args[1])
 		}
 
+		// We probably have a file with users to exclude
+		if excludeFileName != "" {
+			err, _ := load_exclusions(excludeFileName)
+			if err != nil {
+				return fmt.Errorf("invalid excluded user list => %v\n", err)
+			}
+		}
+
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
