@@ -130,3 +130,100 @@ func Test_validate_loadedFile(t *testing.T) {
 		})
 	}
 }
+
+func Test_removeComments(t *testing.T) {
+	type args struct {
+		rawList []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"no comment",
+			args{rawList: []string{"user1", "user2"}},
+			[]string{"user1", "user2"},
+		},
+		{
+			"line comment",
+			args{rawList: []string{"# comment", "user1", "user2"}},
+			[]string{"user1", "user2"},
+		},
+		{
+			"empty line",
+			args{rawList: []string{" ", "user1", "user2"}},
+			[]string{"user1", "user2"},
+		},
+		{
+			"empty line 2",
+			args{rawList: []string{"", "user1", "user2"}},
+			[]string{"user1", "user2"},
+		},
+		{
+			"inline comment 1",
+			args{rawList: []string{"", "user1 #comment", "user2"}},
+			[]string{"user1", "user2"},
+		}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeComments(tt.args.rawList); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("removeComments() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isCommentedLine(t *testing.T) {
+	type args struct {
+		line string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"no comment",
+			args{line: "user"},
+			false,
+		},
+		{
+			"Commented 1",
+			args{line: "# this is a comment"},
+			true,
+		},
+		{
+			"Commented 2",
+			args{line: " # this is a comment"},
+			true,
+		},
+		{
+			"Commented 3",
+			args{line: "#this is a comment"},
+			true,
+		},
+		{
+			"Commented 4",
+			args{line: "#this is #a comment"},
+			true,
+		},
+		{
+			"Empty line 1",
+			args{line: " "},
+			true,
+		},
+		{
+			"Empty line 2",
+			args{line: ""},
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isCommentedLine(tt.args.line); got != tt.want {
+				t.Errorf("isCommentedLine() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
