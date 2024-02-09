@@ -54,6 +54,15 @@ var prCmd = &cobra.Command{
 			return fmt.Errorf("ERROR: %s is not a valid month (should be \"YYYY-MM\").\n", args[1])
 		}
 
+		// We probably have a file with users to exclude
+		if excludeFileName != "" {
+			var err error
+			err, excludedGithubUsers = load_exclusions(excludeFileName)
+			if err != nil {
+				return fmt.Errorf("invalid excluded user list => %v\n", err)
+			}
+		}
+
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -304,7 +313,14 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 					}
 					continue
 				} else {
-					author = singlePr.Node.PullRequest.Author.Login
+					// Is it an author that we don't want to track ?
+					authorToCheck := singlePr.Node.PullRequest.Author.Login
+					if !isExcludedAuthor(excludedGithubUsers, authorToCheck) {
+						author = authorToCheck
+					} else {
+						continue
+					}
+
 				}
 
 				// Skip PR if the status is CLOSED (Same behavior as the bash extraction)

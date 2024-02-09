@@ -211,7 +211,18 @@ func isValidMonthFormat(input string) bool {
 	return true
 }
 
-// Validates whether the input is correctly formatted as a GitHub user or organisation
+// Checks if an author is in the list of authors to exclude.
+// This function assumes that supplied data has been checked upstream.
+func isExcludedAuthor(authorList []string, authorToCheck string) bool {
+	for _, author := range authorList {
+		if strings.EqualFold(author, authorToCheck) {
+			return true
+		}
+	}
+	return false
+}
+
+// Validates whether the input is correctly formatted as a GitHub user or organization
 func isValidOrgFormat(input string) bool {
 	if input == "" {
 		if isVerbose {

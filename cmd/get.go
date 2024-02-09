@@ -25,6 +25,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// if an exclusion file is available, will contain the list of users to exclude
+var excludedGithubUsers []string
+
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get [commenters|pr]",
@@ -38,6 +41,7 @@ func init() {
 	rootCmd.AddCommand(getCmd)
 
 	getCmd.PersistentFlags().StringVarP(&outputFileName, "out", "o", "jenkins_commenters_data.csv", "Output file name.")
+	getCmd.PersistentFlags().StringVarP(&excludeFileName, "excludeFile", "x", "", "Name of the file containing the github handles to exclude from the data collection.")
 	getCmd.PersistentFlags().BoolVarP(&globalIsAppend, "append", "a", false, "Appends data to existing output file.")
 	getCmd.PersistentFlags().BoolVarP(&globalIsNoHeader, "no_header", "", false, "Doesn't add a header to file (implied when appending to existing file).")
 

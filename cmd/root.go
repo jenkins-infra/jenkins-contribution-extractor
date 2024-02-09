@@ -30,6 +30,7 @@ import (
 
 // var cfgFile string
 var outputFileName string
+var excludeFileName string
 var ghTokenVar string
 var isVerbose bool
 var isRootDebug bool

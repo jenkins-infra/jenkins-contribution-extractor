@@ -24,6 +24,11 @@ package cmd
 import (
 	"reflect"
 	"testing"
+
+	"bytes"
+	"strings"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // FIXME: this should be an integration test: it requires a defined token and a set of global (default) values
@@ -304,4 +309,19 @@ func Test_fetchComments_alt(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_ExecuteGetCommenterSinglePrProcessExcludeIfPresent(t *testing.T) {
+	actual := new(bytes.Buffer)
+	rootCmd.SetOut(actual)
+	rootCmd.SetErr(actual)
+	rootCmd.SetArgs([]string{"get", "commenters", "forPr", "jenkinsci/credentials-plugin/475", "-x", "nonExistingFile.txt"})
+	error := rootCmd.Execute()
+
+	assert.Error(t, error, "Function call should have failed")
+
+	//Error is expected
+	expectedMsg := "Error: invalid excluded user list => Unable to read input file nonExistingFile.txt: open nonExistingFile.txt: no such file or directory"
+	lines := strings.Split(actual.String(), "\n")
+	assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
 }
