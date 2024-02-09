@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 )
 
 // Loads the list of gitHub users to exclude from the count
@@ -105,6 +106,13 @@ func isCommentedLine(line string) bool {
 }
 
 func removeInlineComment(input string) string {
+	var output string
 
-	return input
+	// Take what is before the "#"
+	output = strings.Split(input, "#")[0]
+
+	// Remove any trailing white spaces from the splitted string
+	output = strings.TrimSpace(output)
+
+	return output
 }

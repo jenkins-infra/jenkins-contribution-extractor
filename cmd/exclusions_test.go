@@ -164,7 +164,18 @@ func Test_removeComments(t *testing.T) {
 			"inline comment 1",
 			args{rawList: []string{"", "user1 #comment", "user2"}},
 			[]string{"user1", "user2"},
-		}}
+		},
+		{
+			"inline comment 2",
+			args{rawList: []string{"", "user1 # comment#", "user2"}},
+			[]string{"user1", "user2"},
+		},
+		{
+			"spaces around entry",
+			args{rawList: []string{"", "user1 ", " user2 "}},
+			[]string{"user1", "user2"},
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := removeComments(tt.args.rawList); !reflect.DeepEqual(got, tt.want) {
