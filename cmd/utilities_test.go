@@ -601,7 +601,7 @@ func Test_isExcludedAuthor(t *testing.T) {
 		{
 			"in list",
 			args{
-				authorList: []string{"test1", "Test2"},
+				authorList:    []string{"test1", "Test2"},
 				authorToCheck: "test2",
 			},
 			true,
@@ -609,7 +609,7 @@ func Test_isExcludedAuthor(t *testing.T) {
 		{
 			"in list - single item list",
 			args{
-				authorList: []string{"Test2"},
+				authorList:    []string{"Test2"},
 				authorToCheck: "test2",
 			},
 			true,
@@ -617,7 +617,7 @@ func Test_isExcludedAuthor(t *testing.T) {
 		{
 			"not in list",
 			args{
-				authorList: []string{"test1", "Test2"},
+				authorList:    []string{"test1", "Test2"},
 				authorToCheck: "aaaa",
 			},
 			false,
@@ -625,7 +625,7 @@ func Test_isExcludedAuthor(t *testing.T) {
 		{
 			"not in list - single item list",
 			args{
-				authorList: []string{"Test2"},
+				authorList:    []string{"Test2"},
 				authorToCheck: "aaaa",
 			},
 			false,

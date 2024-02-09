@@ -99,7 +99,7 @@ func Test_performSearch(t *testing.T) {
 	}
 }
 
-func Test_ExecuteProcessExcludeIfPresent(t *testing.T) {
+func Test_ExecuteGetSubmitterProcessExcludeIfPresent(t *testing.T) {
 	actual := new(bytes.Buffer)
 	rootCmd.SetOut(actual)
 	rootCmd.SetErr(actual)

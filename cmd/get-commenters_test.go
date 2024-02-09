@@ -22,8 +22,12 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_loadPrListFile(t *testing.T) {
@@ -65,4 +69,19 @@ func Test_loadPrListFile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_ExecuteGetCommenterProcessExcludeIfPresent(t *testing.T) {
+	actual := new(bytes.Buffer)
+	rootCmd.SetOut(actual)
+	rootCmd.SetErr(actual)
+	rootCmd.SetArgs([]string{"get", "commenters", "../test-data/empty-submission-list.csv", "-x", "nonExistingFile.txt"})
+	error := rootCmd.Execute()
+
+	assert.Error(t, error, "Function call should have failed")
+
+	//Error is expected
+	expectedMsg := "Error: invalid excluded user list => Unable to read input file nonExistingFile.txt: open nonExistingFile.txt: no such file or directory"
+	lines := strings.Split(actual.String(), "\n")
+	assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
 }

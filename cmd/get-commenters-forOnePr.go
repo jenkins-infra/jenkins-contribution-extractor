@@ -62,6 +62,16 @@ retrieved from an environment variable (default is "GITHUB_TOKEN" but can be ove
 		if _, _, _, validateErr := validatePRspec(args[0]); validateErr != nil {
 			return validateErr
 		}
+
+		// We probably have a file with users to exclude
+		if excludeFileName != "" {
+			var err error
+			err, excludedGithubUsers = load_exclusions(excludeFileName)
+			if err != nil {
+				return fmt.Errorf("invalid excluded user list => %v\n", err)
+			}
+		}
+
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {

@@ -54,6 +54,16 @@ To extract the commenters for a single PR, use the "forPR" sub-command.
 		if !fileExist(args[0]) {
 			return fmt.Errorf("Invalid file\n")
 		}
+
+		// We probably have a file with users to exclude
+		if excludeFileName != "" {
+			var err error
+			err, excludedGithubUsers = load_exclusions(excludeFileName)
+			if err != nil {
+				return fmt.Errorf("invalid excluded user list => %v\n", err)
+			}
+		}
+
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {

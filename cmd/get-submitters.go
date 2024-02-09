@@ -315,12 +315,12 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 				} else {
 					// Is it an author that we don't want to track ?
 					authorToCheck := singlePr.Node.PullRequest.Author.Login
-					if !isExcludedAuthor(excludedGithubUsers,authorToCheck){
+					if !isExcludedAuthor(excludedGithubUsers, authorToCheck) {
 						author = authorToCheck
-					}else {
+					} else {
 						continue
 					}
-					
+
 				}
 
 				// Skip PR if the status is CLOSED (Same behavior as the bash extraction)
