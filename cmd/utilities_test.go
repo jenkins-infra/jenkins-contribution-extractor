@@ -587,3 +587,55 @@ func Test_isUserBot(t *testing.T) {
 		})
 	}
 }
+
+func Test_isExcludedAuthor(t *testing.T) {
+	type args struct {
+		authorList    []string
+		authorToCheck string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"in list",
+			args{
+				authorList: []string{"test1", "Test2"},
+				authorToCheck: "test2",
+			},
+			true,
+		},
+		{
+			"in list - single item list",
+			args{
+				authorList: []string{"Test2"},
+				authorToCheck: "test2",
+			},
+			true,
+		},
+		{
+			"not in list",
+			args{
+				authorList: []string{"test1", "Test2"},
+				authorToCheck: "aaaa",
+			},
+			false,
+		},
+		{
+			"not in list - single item list",
+			args{
+				authorList: []string{"Test2"},
+				authorToCheck: "aaaa",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isExcludedAuthor(tt.args.authorList, tt.args.authorToCheck); got != tt.want {
+				t.Errorf("isExcludedAuthor() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

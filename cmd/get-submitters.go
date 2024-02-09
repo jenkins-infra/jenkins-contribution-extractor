@@ -56,7 +56,8 @@ var prCmd = &cobra.Command{
 
 		// We probably have a file with users to exclude
 		if excludeFileName != "" {
-			err, _ := load_exclusions(excludeFileName)
+			var err error
+			err, excludedGithubUsers = load_exclusions(excludeFileName)
 			if err != nil {
 				return fmt.Errorf("invalid excluded user list => %v\n", err)
 			}
@@ -312,8 +313,14 @@ func getData(searchedOrg string, startDate string, endDate string) ([]string, in
 					}
 					continue
 				} else {
-					//FIXME: check in the list of authors to skip
-					author = singlePr.Node.PullRequest.Author.Login
+					// Is it an author that we don't want to track ?
+					authorToCheck := singlePr.Node.PullRequest.Author.Login
+					if !isExcludedAuthor(excludedGithubUsers,authorToCheck){
+						author = authorToCheck
+					}else {
+						continue
+					}
+					
 				}
 
 				// Skip PR if the status is CLOSED (Same behavior as the bash extraction)
