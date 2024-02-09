@@ -25,6 +25,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 )
 
 // Loads the list of gitHub users to exclude from the count
@@ -51,11 +53,27 @@ func load_exclusions(exclusions_filename string) (error, []string) {
 		return fmt.Errorf("Error loading \"%s\": %v", exclusions_filename, err), nil
 	}
 
-	if validationError := validate_loadedFile(loadedFile); validationError != nil {
+	uncommentedList := removeComments(loadedFile)
+
+	if validationError := validate_loadedFile(uncommentedList); validationError != nil {
 		return validationError, nil
 	} else {
-		return nil, loadedFile
+		return nil, uncommentedList
 	}
+}
+
+// returns a string list with comments removed
+func removeComments(rawList []string) []string {
+	var cleanedList []string
+
+	for _, lineToCheck := range rawList {
+		if isCommentedLine(lineToCheck) {
+			continue
+		}
+
+		cleanedList = append(cleanedList, removeInlineComment(lineToCheck))
+	}
+	return cleanedList
 }
 
 // Validates whether the supplied string slice is composed of properly formatted GitHub users
@@ -71,4 +89,30 @@ func validate_loadedFile(loadedFile []string) error {
 	}
 
 	return nil
+}
+
+var lineComment_regexp = regexp.MustCompile(`^\s*#`)
+var emptyLine_regexp = regexp.MustCompile(`^\s*$`)
+
+// Returns true if the whole line is commented or contains no data
+func isCommentedLine(line string) bool {
+	if lineComment_regexp.MatchString(line) {
+		return true
+	}
+	if emptyLine_regexp.MatchString(line) {
+		return true
+	}
+	return false
+}
+
+func removeInlineComment(input string) string {
+	var output string
+
+	// Take what is before the "#"
+	output = strings.Split(input, "#")[0]
+
+	// Remove any trailing white spaces from the splitted string
+	output = strings.TrimSpace(output)
+
+	return output
 }

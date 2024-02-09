@@ -1,2 +1,3 @@
+# this is an exclusion file comment
 user1
-user2
+user2 # This is an inline comment
