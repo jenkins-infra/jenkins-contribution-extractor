@@ -237,3 +237,37 @@ func Test_listItemContainedInLine(t *testing.T) {
 		})
 	}
 }
+
+func Test_isFileSpec(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"not a file",
+			args{input: "gitHubUser"},
+			"",
+		},
+		{
+			"with filespec",
+			args{input: "file:thisIsAFile.txt"},
+			"thisIsAFile.txt",
+		},
+		{
+			"with mixed case filespec",
+			args{input: "File:thisIsAFile.txt"},
+			"thisIsAFile.txt",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isFileSpec(tt.args.input); got != tt.want {
+				t.Errorf("isFileSpec() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

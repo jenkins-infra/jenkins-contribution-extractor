@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -73,15 +74,25 @@ func init() {
 // Main function of the REMOVE command
 func performRemove(githubUser string, fileToClean_name string, isBackup bool) error {
 
-	//FIXME: check if we are dealing with a list of users to exclude.
-	//test whether it is a valid GitHub user
-	if !isValidOrgFormat(githubUser) {
-		return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
-	} else {
-		excludedGithubUsers = append(excludedGithubUsers, githubUser)
-	}
+	//Check first if we are dealing with a list of users to exclude. (user string is prefixed with "file:")
+	exclusionFileSpec := isFileSpec(githubUser)
 
-	//TODO: do we have at least one user to remove?
+	if exclusionFileSpec != "" {
+		var err error
+		err, excludedGithubUsers = load_exclusions(excludeFileName)
+		if err != nil {
+			return fmt.Errorf("invalid excluded user list => %v\n", err)
+		}
+	} else {
+		//We are dealing with the simple syntax (single user on the CMD line)
+
+		//test whether it is a valid GitHub user
+		if !isValidOrgFormat(githubUser) {
+			return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
+		} else {
+			excludedGithubUsers = append(excludedGithubUsers, githubUser)
+		}
+	}
 
 	//Do we have an existing file to clean ?
 	if !fileExist(fileToClean_name) {
@@ -147,6 +158,16 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	}
 
 	return nil
+}
+
+// Check whether the supplied string might be a filespec rather than a user
+func isFileSpec(input string) string {
+	filePrefix_regexp := regexp.MustCompile(`(?i)^file:`)
+	if filePrefix_regexp.MatchString(input) {
+		split_result := filePrefix_regexp.Split(input, -1)
+		return split_result[1]
+	}
+	return ""
 }
 
 // load input file
