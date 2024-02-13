@@ -41,6 +41,8 @@ var removeCmd = &cobra.Command{
 	Short: "Removes given user's data in CSV",
 	Long: `This command will remove, for a given user, every data line from the data CSV.
 A backup of the treated file can be requested (default).
+If the user starts with "list:", the rest of the parameter is interpreted as the path to a 
+list of users to exclude (same format as for the GET command).
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		//call requires two parameters (org and month)
@@ -60,7 +62,7 @@ A backup of the treated file can be requested (default).
 	},
 }
 
-// Initialises COBRA for this command
+// Initializes COBRA for this command
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
@@ -71,14 +73,19 @@ func init() {
 // Main function of the REMOVE command
 func performRemove(githubUser string, fileToClean_name string, isBackup bool) error {
 
+	//FIXME: check if we are dealing with a list of users to exclude.
 	//test whether it is a valid GitHub user
 	if !isValidOrgFormat(githubUser) {
 		return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
+	} else {
+		excludedGithubUsers = append(excludedGithubUsers, githubUser)
 	}
+
+	//TODO: do we have at least one user to remove?
 
 	//Do we have an existing file to clean ?
 	if !fileExist(fileToClean_name) {
-		return fmt.Errorf("ERROR: %s is not an existing file.\n", githubUser)
+		return fmt.Errorf("ERROR: %s is not an existing file.\n", fileToClean_name)
 	}
 
 	//Load input file
@@ -92,9 +99,15 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 
 	// Try to clean the file
 	if isVerbose {
-		fmt.Printf("Removing entries for user \"%s\" \n", githubUser)
+		if len(excludedGithubUsers) == 1 {
+			fmt.Printf("Removing entries for user \"%s\" \n", excludedGithubUsers[0])
+		} else {
+			fmt.Printf("Removing entries for users %s \n", prettyPrintStringList(excludedGithubUsers))
+		}
 	}
-	cleanedCsv_List := cleanCsvList(csvToClean_List, githubUser)
+	//FIXME: proper agument type
+	// cleanedCsv_List := cleanCsvList(csvToClean_List, excludedGithubUsers)
+	cleanedCsv_List := cleanCsvList(csvToClean_List, "removeMe")
 
 	//Was it useful ?
 	// cleaned file should be shorter than the initial file

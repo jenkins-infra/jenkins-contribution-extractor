@@ -639,3 +639,37 @@ func Test_isExcludedAuthor(t *testing.T) {
 		})
 	}
 }
+
+func Test_prettyPrintStringList(t *testing.T) {
+	type args struct {
+		listToPrint []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"Empty list",
+			args{listToPrint: []string{}},
+			"[ (empty) ]",
+		},
+		{
+			"single item",
+			args{listToPrint: []string{"user1"}},
+			"[ 'user1' ]",
+		},
+		{
+			"multiple items",
+			args{listToPrint: []string{"user1", "user2"}},
+			"[ 'user1', 'user2' ]",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := prettyPrintStringList(tt.args.listToPrint); got != tt.want {
+				t.Errorf("prettyPrintStringList() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

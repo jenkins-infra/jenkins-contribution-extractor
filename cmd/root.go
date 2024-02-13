@@ -38,6 +38,9 @@ var globalIsAppend bool
 var globalIsNoHeader bool
 var globalIsBigFile bool
 
+// if an exclusion file is available, will contain the list of users to exclude
+var excludedGithubUsers []string
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	// Use:   "jenkins-stats [PR list CSV]",
