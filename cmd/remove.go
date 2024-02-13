@@ -105,9 +105,7 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 			fmt.Printf("Removing entries for users %s \n", prettyPrintStringList(excludedGithubUsers))
 		}
 	}
-	//FIXME: proper agument type
-	// cleanedCsv_List := cleanCsvList(csvToClean_List, excludedGithubUsers)
-	cleanedCsv_List := cleanCsvList(csvToClean_List, "removeMe")
+	cleanedCsv_List := cleanCsvList(csvToClean_List, excludedGithubUsers)
 
 	//Was it useful ?
 	// cleaned file should be shorter than the initial file
@@ -179,16 +177,27 @@ func loadCSVtoClean(fileName string) (error, []string) {
 }
 
 // Removes every list item where the gitHub user is present
-func cleanCsvList(csvToClean_List []string, githubUser string) []string {
+func cleanCsvList(csvToCleanList []string, githubUserList []string) []string {
 	var cleanedList []string
 
-	for _, line := range csvToClean_List {
-		if !strings.Contains(line, githubUser) {
+	for _, line := range csvToCleanList {
+		if !listItemContainedInLine(line, githubUserList) {
 			cleanedList = append(cleanedList, line)
 		}
 	}
 
 	return cleanedList
+}
+
+// Returns true if the line contains one of the users in the supplied user list
+func listItemContainedInLine(line string, userList []string) bool {
+	for _, githubUser := range userList {
+		if strings.Contains(line, githubUser) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Based on a filename, will return a filename to store the backup

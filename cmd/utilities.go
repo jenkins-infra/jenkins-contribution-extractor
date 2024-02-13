@@ -226,7 +226,7 @@ func isExcludedAuthor(authorList []string, authorToCheck string) bool {
 func prettyPrintStringList(listToPrint []string) string {
 	var outputString string
 
-	if len(listToPrint)  == 0 {
+	if len(listToPrint) == 0 {
 		return "[ (empty) ]"
 	}
 

@@ -161,7 +161,7 @@ func Test_loadCSVtoClean(t *testing.T) {
 func Test_cleanCsvList(t *testing.T) {
 	type args struct {
 		csvToCleanList []string
-		githubUser     string
+		githubUserList []string
 	}
 	tests := []struct {
 		name string
@@ -172,15 +172,67 @@ func Test_cleanCsvList(t *testing.T) {
 			"happy case",
 			args{
 				csvToCleanList: expectedSubmittersList,
-				githubUser:     "olamy",
+				githubUserList: []string{"olamy"},
 			},
 			cleanedSubmittersList,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := cleanCsvList(tt.args.csvToCleanList, tt.args.githubUser); !reflect.DeepEqual(got, tt.want) {
+			if got := cleanCsvList(tt.args.csvToCleanList, tt.args.githubUserList); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("cleanCsvList() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_listItemContainedInLine(t *testing.T) {
+	type args struct {
+		line     string
+		userList []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"detected user from single user list",
+			args{
+				line:     "\"jenkinsci\",\"embeddable-build-status-plugin\",229,\"https://github.com/jenkinsci/embeddable-build-status-plugin/pull/229\",\"closed\",\"2023-08-11T21:18:19Z\",\"2023-08-12T03:55:01Z\",\"MarkEWaite\",\"2023-08\",\"Test with Java 21\"",
+				userList: []string{"MarkEWaite"},
+			},
+			true,
+		},
+		{
+			"detected user from multi user list",
+			args{
+				line:     "\"jenkinsci\",\"embeddable-build-status-plugin\",229,\"https://github.com/jenkinsci/embeddable-build-status-plugin/pull/229\",\"closed\",\"2023-08-11T21:18:19Z\",\"2023-08-12T03:55:01Z\",\"MarkEWaite\",\"2023-08\",\"Test with Java 21\"",
+				userList: []string{"user1", "MarkEWaite"},
+			},
+			true,
+		},
+		{
+			"undetected user from multi user list",
+			args{
+				line:     "\"jenkinsci\",\"embeddable-build-status-plugin\",229,\"https://github.com/jenkinsci/embeddable-build-status-plugin/pull/229\",\"closed\",\"2023-08-11T21:18:19Z\",\"2023-08-12T03:55:01Z\",\"MarkEWaite\",\"2023-08\",\"Test with Java 21\"",
+				userList: []string{"user1", "oLamy"},
+			},
+			false,
+		},
+		{
+			"empty user list",
+			args{
+				line:     "\"jenkinsci\",\"embeddable-build-status-plugin\",229,\"https://github.com/jenkinsci/embeddable-build-status-plugin/pull/229\",\"closed\",\"2023-08-11T21:18:19Z\",\"2023-08-12T03:55:01Z\",\"MarkEWaite\",\"2023-08\",\"Test with Java 21\"",
+				userList: []string{},
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := listItemContainedInLine(tt.args.line, tt.args.userList); got != tt.want {
+				t.Errorf("listItemContainedInLine() = %v, want %v", got, tt.want)
 			}
 		})
 	}
