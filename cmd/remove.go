@@ -140,13 +140,14 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 		if isVerbose {
 			fmt.Printf("Removed %d lines from \"%s\" and storing... \n", originalList_size-cleanedList_size, fileToClean_name)
 		} else {
+			//FIXME: pretty print the users removed
 			fmt.Printf("Removed %d line(s) with user \"%s\" from \"%s\"\n", originalList_size-cleanedList_size, githubUser, fileToClean_name)
 		}
 
 		//write list with no header and no append
 		cleanedOut, _ := openOutputCSV(fileToClean_name, false, true)
 		defer cleanedOut.Close()
-		writeCSVtoFile(cleanedOut, false, false, "", cleanedCsv_List)
+		writeCSVtoFile(cleanedOut, false, true, "", cleanedCsv_List)
 		cleanedOut.Close()
 	} else {
 		fmt.Printf("Didn't find an entry for user \"%s\" in file \"%s\" \n", githubUser, fileToClean_name)
