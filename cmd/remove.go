@@ -79,7 +79,7 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 
 	if exclusionFileSpec != "" {
 		var err error
-		err, excludedGithubUsers = load_exclusions(excludeFileName)
+		err, excludedGithubUsers = load_exclusions(exclusionFileSpec)
 		if err != nil {
 			return fmt.Errorf("invalid excluded user list => %v\n", err)
 		}

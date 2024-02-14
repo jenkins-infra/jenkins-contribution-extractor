@@ -23,6 +23,9 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
+	"io"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -54,6 +57,39 @@ func Test_ExecuteMustHaveTwoArguments(t *testing.T) {
 	expectedMsg := "Error: requires at least 2 arg(s), only received 1"
 	lines := strings.Split(actual.String(), "\n")
 	assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
+}
+
+// This is an end to end test
+// FIXME: implement tes
+func Test_ExecuteIntegrationTest(t *testing.T) {
+
+	// Setup environment
+	tempDir := t.TempDir()
+	tempFileName, err := duplicateFile("../test-data/submissions-2023-08.csv", tempDir)
+
+	assert.NoError(t, err, "Unexpected File duplication error")
+	assert.NotEmpty(t, tempFileName, "Unexpected empty temporary filename")
+
+	actual := new(bytes.Buffer)
+	rootCmd.SetOut(actual)
+	rootCmd.SetErr(actual)
+	var commandArguments []string
+	commandArguments = append(commandArguments, "remove", "File:../test-data/test-exclusion.txt", tempFileName)
+	rootCmd.SetArgs(commandArguments)
+	error := rootCmd.Execute()
+
+	assert.NoError(t, error, "Function should not have failed")
+
+	// Compare output with reference (golden) file
+	goldenFileName := "../test-data/submissions-2023-08_cleaned.csv"
+	assert.True(t, isFileEquivalent(tempFileName, goldenFileName))
+
+	//Does the backup file exist?
+
+	// //Error is expected
+	// expectedMsg := "Error: requires at least 2 arg(s), only received 1"
+	// lines := strings.Split(actual.String(), "\n")
+	// assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
 }
 
 func Test_performRemove(t *testing.T) {
@@ -270,4 +306,62 @@ func Test_isFileSpec(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ------------------------------
+//
+// Test Utilities
+//
+// ------------------------------
+
+// duplicate test file as a temporary file.
+// The temporary directory should be created in the calling test so that it gets cleaned at test completion.
+func duplicateFile(originalFileName, targetDir string) (tempFileName string, err error) {
+
+	//Check the status and size of the original file
+	sourceFileStat, err := os.Stat(originalFileName)
+	if err != nil {
+		return "", err
+	}
+	if !sourceFileStat.Mode().IsRegular() {
+		return "", fmt.Errorf("%s is not a regular file", originalFileName)
+	}
+	sourceFileSize := sourceFileStat.Size()
+
+	//Open the original file
+	source, err := os.Open(originalFileName)
+	if err != nil {
+		return "", err
+	}
+	defer source.Close()
+
+	// generate temporary file name in temp directory
+	file, err := os.CreateTemp(targetDir, "testData.*.csv")
+	if err != nil {
+		return "", err
+	}
+	tempFileName = file.Name()
+
+	// create the new file duplication
+	destination, err := os.Create(tempFileName)
+	if err != nil {
+		return "", err
+	}
+	defer destination.Close()
+
+	// Do the actual copy
+	bytesCopied, err := io.Copy(destination, source)
+	if err != nil {
+		return tempFileName, err
+	}
+	if bytesCopied != sourceFileSize {
+		return tempFileName, fmt.Errorf("Source and destination file size do not match after copy (%s is %d bytes and %s is %d bytes", originalFileName, sourceFileSize, tempFileName, bytesCopied)
+	}
+
+	// All went well
+	return tempFileName, nil
+}
+
+func isFileEquivalent(tempFileName, goldenFileName string) bool {
+	panic("unimplemented")
 }
