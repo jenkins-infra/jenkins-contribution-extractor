@@ -363,5 +363,35 @@ func duplicateFile(originalFileName, targetDir string) (tempFileName string, err
 }
 
 func isFileEquivalent(tempFileName, goldenFileName string) bool {
-	panic("unimplemented")
+
+	// Is the size the same
+	tempFileSize := getFileSize(tempFileName)
+	goldenFileSize := getFileSize(goldenFileName)
+
+	if tempFileSize == 0 || goldenFileSize == 0 {
+		fmt.Printf("0 byte file length\n")
+		return false
+	}
+
+	if tempFileSize != goldenFileSize {
+		fmt.Printf("Files are of different sizes: found %d bytes while expecting reference %d bytes \n", tempFileSize, goldenFileSize)
+		return false
+	}
+
+	// load both files
+	return true
+}
+
+// Gets the size of a file
+func getFileSize(fileName string) int64 {
+	tempFileStat, err := os.Stat(fileName)
+	if err != nil {
+		fmt.Printf("Unexpected error getting details of %s: %v\n", fileName, err)
+		return 0
+	}
+	if !tempFileStat.Mode().IsRegular() {
+		fmt.Printf("%s is not a regular file\n", fileName)
+		return 0
+	}
+	return tempFileStat.Size()
 }
