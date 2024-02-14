@@ -60,7 +60,6 @@ func Test_ExecuteMustHaveTwoArguments(t *testing.T) {
 }
 
 // This is an end to end test
-// FIXME: implement tes
 func Test_ExecuteIntegrationTest(t *testing.T) {
 
 	// Setup environment
@@ -85,6 +84,7 @@ func Test_ExecuteIntegrationTest(t *testing.T) {
 	assert.True(t, isFileEquivalent(tempFileName, goldenFileName))
 
 	//Does the backup file exist?
+	//FIXME: check the output and number of lines removed while we're at it.
 
 	// //Error is expected
 	// expectedMsg := "Error: requires at least 2 arg(s), only received 1"
@@ -379,6 +379,27 @@ func isFileEquivalent(tempFileName, goldenFileName string) bool {
 	}
 
 	// load both files
+	err, tempFile_List := loadCSVtoClean(tempFileName)
+	if err != nil {
+		fmt.Printf("Unexpected error loading %s : %v \n", tempFileName, err)
+		return false
+	}
+
+	err, goldenFile_List := loadCSVtoClean(goldenFileName)
+	if err != nil {
+		fmt.Printf("Unexpected error loading %s : %v \n", goldenFileName, err)
+		return false
+	}
+
+	//Compare the two lists
+	for index, line := range tempFile_List {
+		if line != goldenFile_List[index] {
+			fmt.Printf("Compare failure: line %d do not match\n", index)
+			return false
+		}
+	}
+
+	//If we reached this, we are all good
 	return true
 }
 
