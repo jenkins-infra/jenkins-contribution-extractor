@@ -1,2 +1,5 @@
+# Exclusion file for test purposes
+
 basil
 MarkEWaite
+sghill-rewrite

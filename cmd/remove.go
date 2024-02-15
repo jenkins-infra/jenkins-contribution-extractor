@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -41,6 +42,8 @@ var removeCmd = &cobra.Command{
 	Short: "Removes given user's data in CSV",
 	Long: `This command will remove, for a given user, every data line from the data CSV.
 A backup of the treated file can be requested (default).
+If the user starts with "list:", the rest of the parameter is interpreted as the path to a 
+list of users to exclude (same format as for the GET command).
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		//call requires two parameters (org and month)
@@ -60,7 +63,7 @@ A backup of the treated file can be requested (default).
 	},
 }
 
-// Initialises COBRA for this command
+// Initializes COBRA for this command
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
@@ -71,14 +74,29 @@ func init() {
 // Main function of the REMOVE command
 func performRemove(githubUser string, fileToClean_name string, isBackup bool) error {
 
-	//test whether it is a valid GitHub user
-	if !isValidOrgFormat(githubUser) {
-		return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
+	//Check first if we are dealing with a list of users to exclude. (user string is prefixed with "file:")
+	exclusionFileSpec := isFileSpec(githubUser)
+
+	if exclusionFileSpec != "" {
+		var err error
+		err, excludedGithubUsers = load_exclusions(exclusionFileSpec)
+		if err != nil {
+			return fmt.Errorf("invalid excluded user list => %v\n", err)
+		}
+	} else {
+		//We are dealing with the simple syntax (single user on the CMD line)
+
+		//test whether it is a valid GitHub user
+		if !isValidOrgFormat(githubUser) {
+			return fmt.Errorf("ERROR: %s is not a valid GitHub user.\n", githubUser)
+		} else {
+			excludedGithubUsers = append(excludedGithubUsers, githubUser)
+		}
 	}
 
 	//Do we have an existing file to clean ?
 	if !fileExist(fileToClean_name) {
-		return fmt.Errorf("ERROR: %s is not an existing file.\n", githubUser)
+		return fmt.Errorf("ERROR: %s is not an existing file.\n", fileToClean_name)
 	}
 
 	//Load input file
@@ -92,9 +110,13 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 
 	// Try to clean the file
 	if isVerbose {
-		fmt.Printf("Removing entries for user \"%s\" \n", githubUser)
+		if len(excludedGithubUsers) == 1 {
+			fmt.Printf("Removing entries for user \"%s\" \n", excludedGithubUsers[0])
+		} else {
+			fmt.Printf("Removing entries for users %s \n", prettyPrintStringList(excludedGithubUsers))
+		}
 	}
-	cleanedCsv_List := cleanCsvList(csvToClean_List, githubUser)
+	cleanedCsv_List := cleanCsvList(csvToClean_List, excludedGithubUsers)
 
 	//Was it useful ?
 	// cleaned file should be shorter than the initial file
@@ -118,13 +140,17 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 		if isVerbose {
 			fmt.Printf("Removed %d lines from \"%s\" and storing... \n", originalList_size-cleanedList_size, fileToClean_name)
 		} else {
-			fmt.Printf("Removed %d line(s) with user \"%s\" from \"%s\"\n", originalList_size-cleanedList_size, githubUser, fileToClean_name)
+			if len(excludedGithubUsers) == 1 {
+				fmt.Printf("Removed %d line(s) with user \"%s\" from \"%s\"\n", originalList_size-cleanedList_size, excludedGithubUsers[0], fileToClean_name)
+			} else {
+				fmt.Printf("Removed %d line(s) with users \"%s\" from \"%s\"\n", originalList_size-cleanedList_size, prettyPrintStringList(excludedGithubUsers), fileToClean_name)
+			}
 		}
 
 		//write list with no header and no append
 		cleanedOut, _ := openOutputCSV(fileToClean_name, false, true)
 		defer cleanedOut.Close()
-		writeCSVtoFile(cleanedOut, false, false, "", cleanedCsv_List)
+		writeCSVtoFile(cleanedOut, false, true, "", cleanedCsv_List)
 		cleanedOut.Close()
 	} else {
 		fmt.Printf("Didn't find an entry for user \"%s\" in file \"%s\" \n", githubUser, fileToClean_name)
@@ -136,6 +162,16 @@ func performRemove(githubUser string, fileToClean_name string, isBackup bool) er
 	}
 
 	return nil
+}
+
+// Check whether the supplied string might be a filespec rather than a user
+func isFileSpec(input string) string {
+	filePrefix_regexp := regexp.MustCompile(`(?i)^file:`)
+	if filePrefix_regexp.MatchString(input) {
+		split_result := filePrefix_regexp.Split(input, -1)
+		return split_result[1]
+	}
+	return ""
 }
 
 // load input file
@@ -166,16 +202,27 @@ func loadCSVtoClean(fileName string) (error, []string) {
 }
 
 // Removes every list item where the gitHub user is present
-func cleanCsvList(csvToClean_List []string, githubUser string) []string {
+func cleanCsvList(csvToCleanList []string, githubUserList []string) []string {
 	var cleanedList []string
 
-	for _, line := range csvToClean_List {
-		if !strings.Contains(line, githubUser) {
+	for _, line := range csvToCleanList {
+		if !listItemContainedInLine(line, githubUserList) {
 			cleanedList = append(cleanedList, line)
 		}
 	}
 
 	return cleanedList
+}
+
+// Returns true if the line contains one of the users in the supplied user list
+func listItemContainedInLine(line string, userList []string) bool {
+	for _, githubUser := range userList {
+		if strings.Contains(line, githubUser) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Based on a filename, will return a filename to store the backup

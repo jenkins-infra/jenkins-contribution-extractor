@@ -25,9 +25,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// if an exclusion file is available, will contain the list of users to exclude
-var excludedGithubUsers []string
-
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get [commenters|pr]",

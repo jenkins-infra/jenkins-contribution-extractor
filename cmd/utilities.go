@@ -222,6 +222,32 @@ func isExcludedAuthor(authorList []string, authorToCheck string) bool {
 	return false
 }
 
+// Pretty prints the content of a string slice (ex: excluded GitHub users)
+func prettyPrintStringList(listToPrint []string) string {
+	var outputString string
+
+	if len(listToPrint) == 0 {
+		return "[ (empty) ]"
+	}
+
+	for index, j := range listToPrint {
+		if index == 0 { //If the value is first one
+			if len(listToPrint) == 1 {
+				//We have a single element list
+				outputString = outputString + fmt.Sprintf("[ '%v' ]", j)
+			} else {
+				outputString = outputString + fmt.Sprintf("[ '%v', ", j)
+			}
+
+		} else if len(listToPrint) == index+1 { // If the value is the last one
+			outputString = outputString + fmt.Sprintf("'%v' ]", j)
+		} else {
+			outputString = outputString + fmt.Sprintf(" '%v', ", j) // for all ( middle ) values
+		}
+	}
+	return outputString
+}
+
 // Validates whether the input is correctly formatted as a GitHub user or organization
 func isValidOrgFormat(input string) bool {
 	if input == "" {
