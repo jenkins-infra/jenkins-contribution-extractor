@@ -68,3 +68,11 @@ func Test_waitForReset(t *testing.T) {
 	assert.EqualValues(t, seconds_toWait, int(difference.Seconds()))
 
 }
+
+func Test_checkIfSufficientQuota(t *testing.T) {
+	isRootDebug = true
+
+	checkIfSufficientQuota(15)
+
+	//TODO: How do we know that the result was expected ? =>very louzy test
+}
