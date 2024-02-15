@@ -23,6 +23,9 @@ package cmd
 
 import (
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_get_quota(t *testing.T) {
@@ -51,4 +54,25 @@ func Test_get_quota_data_v4(t *testing.T) {
 			get_quota_data_v4()
 		})
 	}
+}
+
+func Test_waitForReset(t *testing.T) {
+	time1 := time.Now()
+
+	seconds_toWait := 10
+	waitForReset(seconds_toWait)
+
+	time2 := time.Now()
+	difference := time2.Sub(time1)
+
+	assert.EqualValues(t, seconds_toWait, int(difference.Seconds()))
+
+}
+
+func Test_checkIfSufficientQuota(t *testing.T) {
+	isRootDebug = true
+
+	checkIfSufficientQuota(15)
+
+	//TODO: How do we know that the result was expected ? =>very louzy test
 }

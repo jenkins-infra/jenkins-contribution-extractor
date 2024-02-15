@@ -73,7 +73,7 @@ func Test_ExecuteIntegrationTest(t *testing.T) {
 	rootCmd.SetOut(actual)
 	rootCmd.SetErr(actual)
 	var commandArguments []string
-	commandArguments = append(commandArguments, "remove", "File:../test-data/test-exclusion.txt", tempFileName)
+	commandArguments = append(commandArguments, "remove", "File:../test-data/test-exclusion.txt", tempFileName, "-b")
 	rootCmd.SetArgs(commandArguments)
 	error := rootCmd.Execute()
 
