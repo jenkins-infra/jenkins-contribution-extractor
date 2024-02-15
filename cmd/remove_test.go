@@ -84,12 +84,8 @@ func Test_ExecuteIntegrationTest(t *testing.T) {
 	assert.True(t, isFileEquivalent(tempFileName, goldenFileName))
 
 	//Does the backup file exist?
-	//FIXME: check the output and number of lines removed while we're at it.
-
-	// //Error is expected
-	// expectedMsg := "Error: requires at least 2 arg(s), only received 1"
-	// lines := strings.Split(actual.String(), "\n")
-	// assert.Equal(t, expectedMsg, lines[0], "Function did not fail for the expected cause")
+	backupFileName := compute_removeBackupFileName(tempFileName)
+	assert.FileExistsf(t, backupFileName, "Backup file (%s) has not been created.", backupFileName)
 }
 
 func Test_performRemove(t *testing.T) {
