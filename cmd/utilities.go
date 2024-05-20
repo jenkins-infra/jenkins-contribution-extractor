@@ -417,3 +417,12 @@ func validateHeader(header []string, referenceHeader []string, isVerbose bool) b
 	}
 	return true
 }
+
+// Validates that the spec is a directory that exists
+func isValidDir(dirName string) bool {
+	info, err := os.Stat(dirName)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
+}

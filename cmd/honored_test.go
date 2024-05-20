@@ -1,5 +1,5 @@
 /*
-Copyright © 2023 Jean-Marc Meessen jean-marc@meessen-web.org
+Copyright © 2024 Jean-Marc Meessen jean-marc@meessen-web.org
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,58 +21,35 @@ THE SOFTWARE.
 */
 package cmd
 
-import (
-	"testing"
-	"time"
+import "testing"
 
-	"github.com/stretchr/testify/assert"
-)
-
-func Test_get_quota(t *testing.T) {
+func Test_performHonoredContributorSelection_params(t *testing.T) {
+	type args struct {
+		dataDir           string
+		outputFileName    string
+		monthToSelectFrom string
+	}
 	tests := []struct {
-		name string
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{
-			"Happy case",
+			"inexistent data directory",
+			args{dataDir: "inexistentDir"},
+			true,
 		},
+		{
+			"valid data directory",
+			args{dataDir: "../test-data"},
+			false,
+		},		
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			get_quota()
+			if err := performHonoredContributorSelection(tt.args.dataDir, tt.args.outputFileName, tt.args.monthToSelectFrom); (err != nil) != tt.wantErr {
+				t.Errorf("performHonoredContributorSelection() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
-}
-
-func Test_get_quota_data_v4(t *testing.T) {
-	tests := []struct {
-		name string
-	}{
-		{"Happy case"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			get_quota_data_v4()
-		})
-	}
-}
-
-func Test_waitForReset(t *testing.T) {
-	time1 := time.Now()
-
-	seconds_toWait := 10
-	waitForReset(seconds_toWait)
-
-	time2 := time.Now()
-	difference := time2.Sub(time1)
-
-	assert.EqualValues(t, seconds_toWait, int(difference.Seconds()))
-
-}
-
-func Test_checkIfSufficientQuota(t *testing.T) {
-	isRootDebug = true
-
-	checkIfSufficientQuota(15)
-
-	//TODO: How do we know that the result was expected ? =>very louzy test
 }
