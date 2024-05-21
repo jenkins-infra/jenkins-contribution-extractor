@@ -30,12 +30,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var honoredDataDir string
-var honoredOutput string
+var honorDataDir string
+var honorOutput string
 
-// honoredCmd represents the honored command
-var honoredCmd = &cobra.Command{
-	Use:   "honored <month>",
+// honorCmd represents the honor command
+var honorCmd = &cobra.Command{
+	Use:   "honor <month>",
 	Short: "Gets a contributor to honor",
 	Long: `A command to get a random submitter from a given month and
 format his data in such a way that it can be used to format an honoring
@@ -54,19 +54,19 @@ message at the bottom of the https://contributors.jenkins.io/ page.
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return performHonoredContributorSelection(honoredDataDir, honoredOutput, args[0])
+		return performHonorContributorSelection(honorDataDir, honorOutput, args[0])
 	},
 }
 
 // Initialize command parameters and defaults
 func init() {
-	rootCmd.AddCommand(honoredCmd)
-	honoredCmd.Flags().StringVarP(&honoredDataDir, "data_dir", "", "data", "Directory containing the data to be read")
-	honoredCmd.Flags().StringVarP(&honoredOutput, "output", "", "", "File to output the data to (default: \"[data_dir]/honored_contributor.csv\")")
+	rootCmd.AddCommand(honorCmd)
+	honorCmd.Flags().StringVarP(&honorDataDir, "data_dir", "", "data", "Directory containing the data to be read")
+	honorCmd.Flags().StringVarP(&honorOutput, "output", "", "", "File to output the data to (default: \"[data_dir]/honored_contributor.csv\")")
 }
 
 // Command processing entry point
-func performHonoredContributorSelection(dataDir string, outputFileName string, monthToSelectFrom string) error {
+func performHonorContributorSelection(dataDir string, outputFileName string, monthToSelectFrom string) error {
 	// validate the month
 	if !isValidMonthFormat(monthToSelectFrom) {
 		return fmt.Errorf("\"%s\" is not a valid month.", monthToSelectFrom)
@@ -84,7 +84,6 @@ func performHonoredContributorSelection(dataDir string, outputFileName string, m
 
 	//compute the correct input filename (pr_per_submitter-YYYY-MM.csv)
 	inputFileName := filepath.Join(dataDir, "pr_per_submitter-"+monthToSelectFrom+".csv")
-
 
 	// fail if the file does not exist else open the file
 	f, err := os.Open(inputFileName)
@@ -105,7 +104,7 @@ func performHonoredContributorSelection(dataDir string, outputFileName string, m
 		fmt.Println("Checking input file")
 	}
 
-	referencePrPerSubmitterHeader := []string{ "user","PR"}
+	referencePrPerSubmitterHeader := []string{"user", "PR"}
 	if !validateHeader(headerLine, referencePrPerSubmitterHeader, isVerbose) {
 		return fmt.Errorf(" Error: header is incorrect.")
 	} else {
@@ -113,7 +112,6 @@ func performHonoredContributorSelection(dataDir string, outputFileName string, m
 			fmt.Printf("  - Header is correct\n")
 		}
 	}
-
 
 	// load the file in memory
 	records, err := r.ReadAll()

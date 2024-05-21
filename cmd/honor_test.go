@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_performHonoredContributorSelection_params(t *testing.T) {
+func Test_performHonorContributorSelection_params(t *testing.T) {
 	type args struct {
 		dataDir           string
 		outputFileName    string
@@ -42,7 +42,7 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 		{
 			"inexistent data directory",
 			args{
-				dataDir: "inexistentDir",
+				dataDir:           "inexistentDir",
 				monthToSelectFrom: "2024-04",
 			},
 			true,
@@ -50,7 +50,7 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 		{
 			"valid data directory and month",
 			args{
-				dataDir: "../test-data",
+				dataDir:           "../test-data",
 				monthToSelectFrom: "2024-04",
 			},
 			false,
@@ -59,14 +59,14 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 			"invalid month",
 			args{
 				monthToSelectFrom: "junkMonth",
-				dataDir: "../test-data",
+				dataDir:           "../test-data",
 			},
 			true,
 		},
 		{
 			"invalid header in input file",
 			args{
-				dataDir: "../test-data",
+				dataDir:           "../test-data",
 				monthToSelectFrom: "2024-03",
 			},
 			true,
@@ -74,20 +74,20 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := performHonoredContributorSelection(tt.args.dataDir, tt.args.outputFileName, tt.args.monthToSelectFrom); (err != nil) != tt.wantErr {
-				t.Errorf("performHonoredContributorSelection() error = %v, wantErr %v", err, tt.wantErr)
+			if err := performHonorContributorSelection(tt.args.dataDir, tt.args.outputFileName, tt.args.monthToSelectFrom); (err != nil) != tt.wantErr {
+				t.Errorf("performHonorContributorSelection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func Test_HonoredCommand_paramCheck_noMonth(t *testing.T) {
+func Test_honorCommand_paramCheck_noMonth(t *testing.T) {
 	//Setup environment
 	actual := new(bytes.Buffer)
 	rootCmd.SetOut(actual)
 	rootCmd.SetErr(actual)
 	var commandArguments []string
-	commandArguments = append(commandArguments, "honored", "--data_dir=../test-data")
+	commandArguments = append(commandArguments, "honor", "--data_dir=../test-data")
 	rootCmd.SetArgs(commandArguments)
 
 	// execute command
@@ -97,13 +97,13 @@ func Test_HonoredCommand_paramCheck_noMonth(t *testing.T) {
 	assert.ErrorContains(t, error, "\"month\" argument is missing.", "Call should have failed with expected error.")
 }
 
-func Test_HonoredCommand_paramCheck_invalidMonth(t *testing.T) {
+func Test_honorCommand_paramCheck_invalidMonth(t *testing.T) {
 	//Setup environment
 	actual := new(bytes.Buffer)
 	rootCmd.SetOut(actual)
 	rootCmd.SetErr(actual)
 	var commandArguments []string
-	commandArguments = append(commandArguments, "honored", "junkMonth", "--data_dir=../test-data")
+	commandArguments = append(commandArguments, "honor", "junkMonth", "--data_dir=../test-data")
 	rootCmd.SetArgs(commandArguments)
 
 	// execute command
