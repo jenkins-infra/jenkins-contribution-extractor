@@ -22,13 +22,17 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/shurcooL/githubv4"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 var honorDataDir string
@@ -137,14 +141,161 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 	nbrOfRecordsLoaded := len(records) - 1
 
 	randomRecordNumber := rand.IntN(nbrOfRecordsLoaded)
+	submittersName := records[randomRecordNumber][0]
+	submittersPRs := records[randomRecordNumber][1]
 	// fmt.Printf("[%d] - %s - %s PRs\n", randomRecordNumber, records[randomRecordNumber][0], records[randomRecordNumber][1])
 	if isVerbose {
-		fmt.Printf("  - Picked record %d : %s - %s PRs\n", randomRecordNumber, records[randomRecordNumber][0], records[randomRecordNumber][1])
+		fmt.Printf("  - Picked record %d : %s - %s PRs\n", randomRecordNumber, submittersName, submittersPRs)
 	}
 
-	// TODO: make a GitHub query to retrieve the contributors information (URL, avatar) and PRs
+	// make a GitHub query to retrieve the contributors information (URL, avatar) and PRs
+	if err := getSubmittersPRfromGH(submittersName, submittersPRs, monthToSelectFrom); err != nil {
+		return err
+	}
+
 	// TODO: format the output with the gathered data
 	// TODO: output the file
+
+	return nil
+}
+
+var uniqueRepoSet = make(map[string]bool)
+var uniqueRepoSlice = []string{}
+
+// func main() {
+//     add("aaa")
+//     add("bbb")
+//     add("bbb")
+//     add("ccc")
+// }
+
+// Adds an item to the slice only if it is not there yet. See https://stackoverflow.com/questions/33207197/how-can-i-create-an-array-that-contains-unique-strings
+func addUniqueItem(s string) {
+    if uniqueRepoSet[s] {
+        return // Already in the map
+    }
+    uniqueRepoSlice = append(uniqueRepoSlice, s)
+    uniqueRepoSet[s] = true
+}
+
+/*****
+ ***** Github query definition
+ *****/
+
+//GitHub Graphql query. Test at https://docs.github.com/en/graphql/overview/explorer
+/*
+{
+	user(login: "basil"){
+    	name
+    	company
+    	avatarUrl
+    	url
+  }
+	search(query: "org:jenkinsci org:jenkins-infra is:pr author:dduportal created:2024-04-01..2024-04-30", type: ISSUE, first: 100) {
+    issueCount
+    edges {
+      node {
+        ... on PullRequest {
+          author {
+            login
+            avatarUrl
+            url
+          }
+          url
+          title
+          createdAt
+          repository {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+*/
+
+//******************************
+
+// Gets all the PRs in the given month for the submitters
+func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToSelectFrom string) error {
+
+	// Setup the GH query client
+	ghToken := loadGitHubToken(ghTokenVar)
+	src := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: ghToken},
+	)
+	httpClient := oauth2.NewClient(context.Background(), src)
+	client := githubv4.NewClient(httpClient)
+
+	startDate, endDate := getStartAndEndOfMonth(monthToSelectFrom)
+
+	var prQuery3 struct {
+		Search struct {
+			IssueCount int
+			Edges      []struct {
+				Node struct {
+					PullRequest struct {
+						Url        string
+						Title      string
+						CreatedAt  time.Time
+						Repository struct {
+							Name  string
+							Owner struct {
+								Login string
+							}
+						}
+						Author struct {
+							Login        string
+							AvatarUrl    string
+							Url          string
+							ResourcePath string
+						}
+					} `graphql:"... on PullRequest"`
+				}
+			}
+		} `graphql:"search(first: $count, query: $searchQuery, type: ISSUE)"`
+	}
+
+	variables := map[string]interface{}{
+		"searchQuery": githubv4.String(
+			fmt.Sprintf(`org:%s org:%s is:pr author:%s created:%s..%s`,
+				githubv4.String("jenkinsci"),
+				githubv4.String("jenkins-infra"),
+				// githubv4.String("dduportal"),
+				githubv4.String(submittersName),
+				githubv4.String(startDate),
+				githubv4.String(endDate),
+			),
+		),
+		"count": githubv4.Int(100),
+	}
+
+	if err := client.Query(context.Background(), &prQuery3, variables); err != nil {
+		return fmt.Errorf("Error performing query: %v\n", err)
+	}
+
+	totalPRs := prQuery3.Search.IssueCount
+	//FIXME: check if the count equals the one passed to func
+
+	fmt.Printf("PRs found: %d\n", totalPRs)
+
+	for ii, singlePr := range prQuery3.Search.Edges {
+		foundAuthor := singlePr.Node.PullRequest.Author.Login
+		authorURL := singlePr.Node.PullRequest.Author.Url
+		authorAvatarUrl := singlePr.Node.PullRequest.Author.AvatarUrl
+		repositoryName := singlePr.Node.PullRequest.Repository.Owner.Login + "/" + singlePr.Node.PullRequest.Repository.Name
+
+
+		if ii == 0 {
+			fmt.Printf("Author: %s\n", foundAuthor)
+			fmt.Printf("URL:    %s\n", authorURL)
+			fmt.Printf("Avatar: %s\n", authorAvatarUrl)
+		}
+		// fmt.Printf("%s ", repositoryName)
+		addUniqueItem(repositoryName)
+	}
+	fmt.Print("\nrepos: ")
+	fmt.Println(uniqueRepoSlice)
 
 	return nil
 }
