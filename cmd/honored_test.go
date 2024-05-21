@@ -41,13 +41,35 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 	}{
 		{
 			"inexistent data directory",
-			args{dataDir: "inexistentDir"},
+			args{
+				dataDir: "inexistentDir",
+				monthToSelectFrom: "2024-04",
+			},
 			true,
 		},
 		{
-			"valid data directory",
-			args{dataDir: "../test-data"},
+			"valid data directory and month",
+			args{
+				dataDir: "../test-data",
+				monthToSelectFrom: "2024-04",
+			},
 			false,
+		},
+		{
+			"invalid month",
+			args{
+				monthToSelectFrom: "junkMonth",
+				dataDir: "../test-data",
+			},
+			true,
+		},
+		{
+			"invalid header in input file",
+			args{
+				dataDir: "../test-data",
+				monthToSelectFrom: "2024-03",
+			},
+			true,
 		},
 	}
 	for _, tt := range tests {
@@ -72,5 +94,21 @@ func Test_HonoredCommand_paramCheck_noMonth(t *testing.T) {
 	error := rootCmd.Execute()
 
 	// check results
-	assert.ErrorContains(t, error, "requires at least 1 arg(s), only received 0", "Call should have failed")
+	assert.ErrorContains(t, error, "\"month\" argument is missing.", "Call should have failed with expected error.")
+}
+
+func Test_HonoredCommand_paramCheck_invalidMonth(t *testing.T) {
+	//Setup environment
+	actual := new(bytes.Buffer)
+	rootCmd.SetOut(actual)
+	rootCmd.SetErr(actual)
+	var commandArguments []string
+	commandArguments = append(commandArguments, "honored", "junkMonth", "--data_dir=../test-data")
+	rootCmd.SetArgs(commandArguments)
+
+	// execute command
+	error := rootCmd.Execute()
+
+	// check results
+	assert.ErrorContains(t, error, "\"junkMonth\" is not a valid month.", "Call should have failed with expected error.")
 }
