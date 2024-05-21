@@ -21,7 +21,12 @@ THE SOFTWARE.
 */
 package cmd
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func Test_performHonoredContributorSelection_params(t *testing.T) {
 	type args struct {
@@ -43,7 +48,7 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 			"valid data directory",
 			args{dataDir: "../test-data"},
 			false,
-		},		
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -52,4 +57,20 @@ func Test_performHonoredContributorSelection_params(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_HonoredCommand_paramCheck_noMonth(t *testing.T) {
+	//Setup environment
+	actual := new(bytes.Buffer)
+	rootCmd.SetOut(actual)
+	rootCmd.SetErr(actual)
+	var commandArguments []string
+	commandArguments = append(commandArguments, "honored", "--data_dir=../test-data")
+	rootCmd.SetArgs(commandArguments)
+
+	// execute command
+	error := rootCmd.Execute()
+
+	// check results
+	assert.ErrorContains(t, error, "requires at least 1 arg(s), only received 0", "Call should have failed")
 }

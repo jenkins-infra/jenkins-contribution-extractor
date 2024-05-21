@@ -29,17 +29,25 @@ import (
 
 var honoredDataDir string
 var honoredOutput string
-var honoredMonth string
 
 // honoredCmd represents the honored command
 var honoredCmd = &cobra.Command{
-	Use:   "honored",
+	Use:   "honored <month>",
 	Short: "Gets a contributor to honor",
 	Long: `A command to get a random submitter from a given month and
 format his data in such a way that it can be used to format an honoring
-message at the bottom of the https://contributors.jenkins.io/ page`,
+message at the bottom of the https://contributors.jenkins.io/ page.
+
+\"month\" is a required parameter. It is in YYYY-MM format.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		//call requires two parameters (org and month)
+		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+			return err
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return performHonoredContributorSelection(honoredDataDir, honoredOutput, honoredMonth)
+		return performHonoredContributorSelection(honoredDataDir, honoredOutput, args[0])
 	},
 }
 
@@ -48,7 +56,6 @@ func init() {
 	rootCmd.AddCommand(honoredCmd)
 	honoredCmd.Flags().StringVarP(&honoredDataDir, "data_dir", "", "consolidated_data", "Directory containing the data to be read")
 	honoredCmd.Flags().StringVarP(&honoredOutput, "output", "", "", "File to output the data to (default: \"[data_dir]/honored_contributor.csv\")")
-	honoredCmd.Flags().StringVarP(&honoredMonth, "month", "", "", "the month to select the submitter from (format \"YYYY-MM\")")
 }
 
 // Command processing entry point
