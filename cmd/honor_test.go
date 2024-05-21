@@ -113,4 +113,20 @@ func Test_honorCommand_paramCheck_invalidMonth(t *testing.T) {
 	assert.ErrorContains(t, error, "\"junkMonth\" is not a valid month.", "Call should have failed with expected error.")
 }
 
-//FIXME: add integration test with --verbose param
+// FIXME: do this in a temporary directory
+func Test_honorCommand_integrationTest_verbose(t *testing.T) {
+	//Setup environment
+	actual := new(bytes.Buffer)
+	rootCmd.SetOut(actual)
+	rootCmd.SetErr(actual)
+	var commandArguments []string
+	commandArguments = append(commandArguments, "honor", "2024-04", "--data_dir=../test-data", "--verbose")
+	rootCmd.SetArgs(commandArguments)
+
+	// execute command
+	error := rootCmd.Execute()
+
+	// check results
+	assert.NoError(t, error, "Call should not have failed")
+
+}

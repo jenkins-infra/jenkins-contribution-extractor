@@ -85,9 +85,9 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 	} else {
 		honorOutputFileName = suppliedOutputFileName
 	}
-
-	//FIXME: remove this
-	fmt.Println(honorOutputFileName)
+	if isVerbose {
+		fmt.Println("Output file: " + honorOutputFileName + "\n")
+	}
 
 	//compute the correct input filename (pr_per_submitter-YYYY-MM.csv)
 	inputFileName := filepath.Join(dataDir, "pr_per_submitter-"+monthToSelectFrom+".csv")
@@ -108,7 +108,7 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 	}
 
 	if isVerbose {
-		fmt.Println("Checking input file")
+		fmt.Println("Checking input file " + inputFileName)
 	}
 
 	referencePrPerSubmitterHeader := []string{"user", "PR"}
@@ -137,11 +137,13 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 	nbrOfRecordsLoaded := len(records) - 1
 
 	randomRecordNumber := rand.IntN(nbrOfRecordsLoaded)
-	fmt.Printf("[%d] - %s - %s PRs\n", randomRecordNumber, records[randomRecordNumber][0], records[randomRecordNumber][1])
+	// fmt.Printf("[%d] - %s - %s PRs\n", randomRecordNumber, records[randomRecordNumber][0], records[randomRecordNumber][1])
+	if isVerbose {
+		fmt.Printf("  - Picked record %d : %s - %s PRs\n", randomRecordNumber, records[randomRecordNumber][0], records[randomRecordNumber][1])
+	}
 
-	// TODO: make a GitHub query to retrieve the contributors information (URL, avatar)
-	// TODO: for the given user, retrieve all the PRs of that user in the given month
-	// TODO: pick the required data and assemble it so that it can be outputed
+	// TODO: make a GitHub query to retrieve the contributors information (URL, avatar) and PRs
+	// TODO: format the output with the gathered data
 	// TODO: output the file
 
 	return nil
