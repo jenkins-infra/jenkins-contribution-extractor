@@ -162,13 +162,6 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 var uniqueRepoSet = make(map[string]bool)
 var uniqueRepoSlice = []string{}
 
-// func main() {
-//     add("aaa")
-//     add("bbb")
-//     add("bbb")
-//     add("ccc")
-// }
-
 // Adds an item to the slice only if it is not there yet. See https://stackoverflow.com/questions/33207197/how-can-i-create-an-array-that-contains-unique-strings
 func addUniqueItem(s string) {
     if uniqueRepoSet[s] {
@@ -227,8 +220,26 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
 
-	startDate, endDate := getStartAndEndOfMonth(monthToSelectFrom)
+	var userQuery struct {
+		User struct {
+			Login string
+			Name string
+			Company string
+			AvatarUrl string
+			Url string
+		} `graphql:"user(login: $submitter)"`
+	}
+	userVariables := map[string]interface{}{
+		"submitter": githubv4.String(submittersName),
+	}
+	if err := client.Query(context.Background(), &userQuery, userVariables); err != nil {
+		return fmt.Errorf("Error performing user query: %v\n", err)
+	}
 
+	fullName := userQuery.User.Name
+
+
+	startDate, endDate := getStartAndEndOfMonth(monthToSelectFrom)
 	var prQuery3 struct {
 		Search struct {
 			IssueCount int
@@ -261,7 +272,6 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 			fmt.Sprintf(`org:%s org:%s is:pr author:%s created:%s..%s`,
 				githubv4.String("jenkinsci"),
 				githubv4.String("jenkins-infra"),
-				// githubv4.String("dduportal"),
 				githubv4.String(submittersName),
 				githubv4.String(startDate),
 				githubv4.String(endDate),
@@ -271,13 +281,15 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	}
 
 	if err := client.Query(context.Background(), &prQuery3, variables); err != nil {
-		return fmt.Errorf("Error performing query: %v\n", err)
+		return fmt.Errorf("Error performing PR query: %v\n", err)
 	}
 
 	totalPRs := prQuery3.Search.IssueCount
 	//FIXME: check if the count equals the one passed to func
 
+
 	fmt.Printf("PRs found: %d\n", totalPRs)
+	fmt.Printf("User name: %s\n", fullName)
 
 	for ii, singlePr := range prQuery3.Search.Edges {
 		foundAuthor := singlePr.Node.PullRequest.Author.Login
