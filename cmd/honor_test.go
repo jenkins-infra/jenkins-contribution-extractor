@@ -112,3 +112,5 @@ func Test_honorCommand_paramCheck_invalidMonth(t *testing.T) {
 	// check results
 	assert.ErrorContains(t, error, "\"junkMonth\" is not a valid month.", "Call should have failed with expected error.")
 }
+
+//FIXME: add integration test with --verbose param

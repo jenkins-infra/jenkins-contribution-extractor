@@ -24,6 +24,7 @@ package cmd
 import (
 	"encoding/csv"
 	"fmt"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
 
@@ -132,7 +133,12 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 		fmt.Println("  - At least one Submitter data available")
 	}
 
-	// TODO: pick a data line randomly
+	// pick a data line randomly
+	nbrOfRecordsLoaded := len(records) - 1
+
+	randomRecordNumber := rand.IntN(nbrOfRecordsLoaded)
+	fmt.Printf("[%d] - %s - %s PRs\n", randomRecordNumber, records[randomRecordNumber][0], records[randomRecordNumber][1])
+
 	// TODO: make a GitHub query to retrieve the contributors information (URL, avatar)
 	// TODO: for the given user, retrieve all the PRs of that user in the given month
 	// TODO: pick the required data and assemble it so that it can be outputed
