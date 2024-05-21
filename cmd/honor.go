@@ -66,7 +66,7 @@ func init() {
 }
 
 // Command processing entry point
-func performHonorContributorSelection(dataDir string, outputFileName string, monthToSelectFrom string) error {
+func performHonorContributorSelection(dataDir string, suppliedOutputFileName string, monthToSelectFrom string) error {
 	// validate the month
 	if !isValidMonthFormat(monthToSelectFrom) {
 		return fmt.Errorf("\"%s\" is not a valid month.", monthToSelectFrom)
@@ -78,9 +78,15 @@ func performHonorContributorSelection(dataDir string, outputFileName string, mon
 	}
 
 	// if output is not defined, build it
-	if outputFileName == "" {
-		outputFileName = filepath.Join(dataDir, "honored_contributor.csv")
+	honorOutputFileName := ""
+	if suppliedOutputFileName == "" {
+		honorOutputFileName = filepath.Join(dataDir, "honored_contributor.csv")
+	} else {
+		honorOutputFileName = suppliedOutputFileName
 	}
+
+	//FIXME: remove this
+	fmt.Println(honorOutputFileName)
 
 	//compute the correct input filename (pr_per_submitter-YYYY-MM.csv)
 	inputFileName := filepath.Join(dataDir, "pr_per_submitter-"+monthToSelectFrom+".csv")
