@@ -237,6 +237,9 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	}
 
 	fullName := userQuery.User.Name
+	authorURL := userQuery.User.Url
+	authorAvatarUrl := userQuery.User.AvatarUrl
+	authorCompany := userQuery.User.Company
 
 
 	startDate, endDate := getStartAndEndOfMonth(monthToSelectFrom)
@@ -257,9 +260,6 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 						}
 						Author struct {
 							Login        string
-							AvatarUrl    string
-							Url          string
-							ResourcePath string
 						}
 					} `graphql:"... on PullRequest"`
 				}
@@ -289,19 +289,19 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 
 
 	fmt.Printf("PRs found: %d\n", totalPRs)
+	fmt.Printf("\n")
 	fmt.Printf("User name: %s\n", fullName)
+	fmt.Printf("URL:       %s\n", authorURL)
+	fmt.Printf("Avatar:    %s\n", authorAvatarUrl)
+	fmt.Printf("Company:   %s\n", authorCompany)
 
 	for ii, singlePr := range prQuery3.Search.Edges {
 		foundAuthor := singlePr.Node.PullRequest.Author.Login
-		authorURL := singlePr.Node.PullRequest.Author.Url
-		authorAvatarUrl := singlePr.Node.PullRequest.Author.AvatarUrl
 		repositoryName := singlePr.Node.PullRequest.Repository.Owner.Login + "/" + singlePr.Node.PullRequest.Repository.Name
 
 
 		if ii == 0 {
 			fmt.Printf("Author: %s\n", foundAuthor)
-			fmt.Printf("URL:    %s\n", authorURL)
-			fmt.Printf("Avatar: %s\n", authorAvatarUrl)
 		}
 		// fmt.Printf("%s ", repositoryName)
 		addUniqueItem(repositoryName)
