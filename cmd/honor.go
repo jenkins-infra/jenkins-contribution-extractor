@@ -28,6 +28,8 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shurcooL/githubv4"
@@ -37,6 +39,18 @@ import (
 
 var honorDataDir string
 var honorOutput string
+
+type HonoredContributorData struct {
+	handle            string
+	fullName          string
+	authorURL         string
+	authorAvatarUrl   string
+	authorCompany     string
+	month             string
+	totalPRs_found    string
+	totalPRs_expected string
+	repositories      string
+}
 
 // honorCmd represents the honor command
 var honorCmd = &cobra.Command{
@@ -149,6 +163,9 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 	}
 
 	// make a GitHub query to retrieve the contributors information (URL, avatar) and PRs
+	if isVerbose {
+		fmt.Printf("Fetching data from GitHub")
+	}
 	if err := getSubmittersPRfromGH(submittersName, submittersPRs, monthToSelectFrom); err != nil {
 		return err
 	}
@@ -164,11 +181,11 @@ var uniqueRepoSlice = []string{}
 
 // Adds an item to the slice only if it is not there yet. See https://stackoverflow.com/questions/33207197/how-can-i-create-an-array-that-contains-unique-strings
 func addUniqueItem(s string) {
-    if uniqueRepoSet[s] {
-        return // Already in the map
-    }
-    uniqueRepoSlice = append(uniqueRepoSlice, s)
-    uniqueRepoSet[s] = true
+	if uniqueRepoSet[s] {
+		return // Already in the map
+	}
+	uniqueRepoSlice = append(uniqueRepoSlice, s)
+	uniqueRepoSet[s] = true
 }
 
 /*****
@@ -220,13 +237,19 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	httpClient := oauth2.NewClient(context.Background(), src)
 	client := githubv4.NewClient(httpClient)
 
+	var contributorData HonoredContributorData
+	contributorData.handle = submittersName
+	contributorData.totalPRs_expected = submittersPRs
+	contributorData.month = monthToSelectFrom
+
+	// Setup the query to retrieve the user's information
 	var userQuery struct {
 		User struct {
-			Login string
-			Name string
-			Company string
+			Login     string
+			Name      string
+			Company   string
 			AvatarUrl string
-			Url string
+			Url       string
 		} `graphql:"user(login: $submitter)"`
 	}
 	userVariables := map[string]interface{}{
@@ -236,12 +259,14 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 		return fmt.Errorf("Error performing user query: %v\n", err)
 	}
 
-	fullName := userQuery.User.Name
-	authorURL := userQuery.User.Url
-	authorAvatarUrl := userQuery.User.AvatarUrl
-	authorCompany := userQuery.User.Company
+	// Load the data form the returned json file
+	contributorData.handle = submittersName
+	contributorData.fullName = userQuery.User.Name
+	contributorData.authorURL = userQuery.User.Url
+	contributorData.authorAvatarUrl = userQuery.User.AvatarUrl
+	contributorData.authorCompany = userQuery.User.Company
 
-
+	// Setup the GH call to retrieve all the contributions
 	startDate, endDate := getStartAndEndOfMonth(monthToSelectFrom)
 	var prQuery3 struct {
 		Search struct {
@@ -259,7 +284,7 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 							}
 						}
 						Author struct {
-							Login        string
+							Login string
 						}
 					} `graphql:"... on PullRequest"`
 				}
@@ -285,29 +310,49 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	}
 
 	totalPRs := prQuery3.Search.IssueCount
-	//FIXME: check if the count equals the one passed to func
+	//FIXME: check if the count equals the one passed to function
+	contributorData.totalPRs_found = strconv.Itoa(totalPRs)
 
-
-	fmt.Printf("PRs found: %d\n", totalPRs)
-	fmt.Printf("\n")
-	fmt.Printf("User name: %s\n", fullName)
-	fmt.Printf("URL:       %s\n", authorURL)
-	fmt.Printf("Avatar:    %s\n", authorAvatarUrl)
-	fmt.Printf("Company:   %s\n", authorCompany)
-
-	for ii, singlePr := range prQuery3.Search.Edges {
-		foundAuthor := singlePr.Node.PullRequest.Author.Login
+	for _, singlePr := range prQuery3.Search.Edges {
 		repositoryName := singlePr.Node.PullRequest.Repository.Owner.Login + "/" + singlePr.Node.PullRequest.Repository.Name
-
-
-		if ii == 0 {
-			fmt.Printf("Author: %s\n", foundAuthor)
-		}
-		// fmt.Printf("%s ", repositoryName)
 		addUniqueItem(repositoryName)
 	}
-	fmt.Print("\nrepos: ")
-	fmt.Println(uniqueRepoSlice)
+	contributorData.repositories = stringifySlice(uniqueRepoSlice)
+
+	if isVerbose {
+		fmt.Print("\n\n")
+		fmt.Println(prettyPrint_HonoredContributorData(contributorData))
+	}
+
+	//TODO: return the data
 
 	return nil
+}
+
+// Format the data in a displayable manner
+func prettyPrint_HonoredContributorData(data HonoredContributorData) string {
+	var strBuffer strings.Builder
+	strBuffer.WriteString(fmt.Sprintf("PRs found:    %s\n", data.totalPRs_found))
+	strBuffer.WriteString(fmt.Sprintf("PRs expected: %s\n", data.totalPRs_expected))
+	strBuffer.WriteString(fmt.Sprintf("Repositories: %s\n\n", data.repositories))
+	strBuffer.WriteString(fmt.Sprintf("GH handle:    %s\n", data.handle))
+	strBuffer.WriteString(fmt.Sprintf("User name:    %s\n", data.fullName))
+	strBuffer.WriteString(fmt.Sprintf("URL:          %s\n", data.authorURL))
+	strBuffer.WriteString(fmt.Sprintf("Avatar:       %s\n", data.authorAvatarUrl))
+	strBuffer.WriteString(fmt.Sprintf("Company:      %s\n", data.authorCompany))
+
+	return strBuffer.String()
+}
+
+// Format a string slice to be stored in a csv
+func stringifySlice(s []string) string {
+	var buffer string
+	for i, item := range s {
+		if i == 0 {
+			buffer = item
+		} else {
+			buffer = buffer + " " + item
+		}
+	}
+	return buffer
 }

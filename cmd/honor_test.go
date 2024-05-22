@@ -130,3 +130,32 @@ func Test_honorCommand_integrationTest_verbose(t *testing.T) {
 	assert.NoError(t, error, "Call should not have failed")
 
 }
+
+func Test_stringifySlice(t *testing.T) {
+	type args struct {
+		s []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"happy case",
+			args{s: []string{"aaa", "bbb", "ccc"}},
+			"aaa bbb ccc",
+		},
+		{
+			"Single item case",
+			args{s: []string{"aaa"}},
+			"aaa",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := stringifySlice(tt.args.s); got != tt.want {
+				t.Errorf("stringifySlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
