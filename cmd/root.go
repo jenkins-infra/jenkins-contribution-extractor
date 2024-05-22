@@ -48,6 +48,7 @@ var rootCmd = &cobra.Command{
 	Long: `Retrieve data from GitHub that can be useful to evaluate the health and activity of a community.
 It currently gets data about Pull Request submitters and commenters on those Pull Requests.
 `,
+	SilenceUsage: true,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
