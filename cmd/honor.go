@@ -294,9 +294,10 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 
 	variables := map[string]interface{}{
 		"searchQuery": githubv4.String(
-			fmt.Sprintf(`org:%s org:%s is:pr author:%s created:%s..%s`,
+			fmt.Sprintf(`org:%s org:%s org:%s is:pr author:%s created:%s..%s`,
 				githubv4.String("jenkinsci"),
 				githubv4.String("jenkins-infra"),
+				githubv4.String("jenkins-docs"),
 				githubv4.String(submittersName),
 				githubv4.String(startDate),
 				githubv4.String(endDate),
@@ -334,6 +335,7 @@ func prettyPrint_HonoredContributorData(data HonoredContributorData) string {
 	var strBuffer strings.Builder
 	strBuffer.WriteString(fmt.Sprintf("PRs found:    %s\n", data.totalPRs_found))
 	strBuffer.WriteString(fmt.Sprintf("PRs expected: %s\n", data.totalPRs_expected))
+	strBuffer.WriteString(fmt.Sprintf("Month:        %s\n", data.month))
 	strBuffer.WriteString(fmt.Sprintf("Repositories: %s\n\n", data.repositories))
 	strBuffer.WriteString(fmt.Sprintf("GH handle:    %s\n", data.handle))
 	strBuffer.WriteString(fmt.Sprintf("User name:    %s\n", data.fullName))
