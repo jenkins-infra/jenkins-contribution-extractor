@@ -311,10 +311,15 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	}
 
 	totalPRs := prQuery3.Search.IssueCount
-	//FIXME: check if the count equals the one passed to function
 	contributorData.totalPRs_found = strconv.Itoa(totalPRs)
+	if contributorData.totalPRs_expected != contributorData.totalPRs_found {
+		return fmt.Errorf("Expected PR number does not match query's PR number. (%s vs. %s)", contributorData.totalPRs_expected, contributorData.totalPRs_found)
+	}
 
 	for _, singlePr := range prQuery3.Search.Edges {
+		if singlePr.Node.PullRequest.Author.Login != submittersName {
+			return fmt.Errorf("Unexpected error: PR author does not match requested GH userName (%s vs. %s)", singlePr.Node.PullRequest.Author.Login, submittersName)
+		}
 		repositoryName := singlePr.Node.PullRequest.Repository.Owner.Login + "/" + singlePr.Node.PullRequest.Repository.Name
 		addUniqueItem(repositoryName)
 	}
