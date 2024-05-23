@@ -135,7 +135,7 @@ func openOutputCSV(outFname string, isAppend bool, isNoHeader bool) (*os.File, b
 	}
 
 	if isVerbose {
-		fmt.Printf("Writing data to \"%s\" %s %s header)\n", outputFileName, isAppendString, isNoHeaderString)
+		fmt.Printf("Writing data to \"%s\" %s %s header)\n", outFname, isAppendString, isNoHeaderString)
 	}
 
 	return out, localIsNoHeader

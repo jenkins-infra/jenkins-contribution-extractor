@@ -159,3 +159,56 @@ func Test_stringifySlice(t *testing.T) {
 		})
 	}
 }
+
+func Test_generateHonoredContributorDataAsCSV(t *testing.T) {
+	type args struct {
+		contributorData HonoredContributorData
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"typical case",
+			args{
+				contributorData: HonoredContributorData{
+					handle:            "GH_handle",
+					fullName:          "author_fullName",
+					authorURL:         "author_url",
+					authorAvatarUrl:   "author_avatar",
+					authorCompany:     "a_company",
+					month:             "a_month",
+					totalPRs_found:    "PR_found",
+					totalPRs_expected: "PR_expected",
+					repositories:      "repositories",
+				},
+			},
+			"\"a_month\", \"GH_handle\", \"author_fullName\", \"a_company\", \"author_url\", \"author_avatar\", \"PR_found\", \"repositories\"",
+		},
+		{
+			"with empty fields",
+			args{
+				contributorData: HonoredContributorData{
+					handle:            "GH_handle",
+					fullName:          "",
+					authorURL:         "author_url",
+					authorAvatarUrl:   "author_avatar",
+					authorCompany:     "",
+					month:             "a_month",
+					totalPRs_found:    "PR_found",
+					totalPRs_expected: "PR_expected",
+					repositories:      "repositories",
+				},
+			},
+			"\"a_month\", \"GH_handle\", \"\", \"\", \"author_url\", \"author_avatar\", \"PR_found\", \"repositories\"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := generateHonoredContributorDataAsCSV(tt.args.contributorData); got != tt.want {
+				t.Errorf("generateHonoredContributorDataAsCSV() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -166,12 +166,26 @@ func performHonorContributorSelection(dataDir string, suppliedOutputFileName str
 	if isVerbose {
 		fmt.Printf("Fetching data from GitHub")
 	}
-	if err := getSubmittersPRfromGH(submittersName, submittersPRs, monthToSelectFrom); err != nil {
+
+	var contributorData HonoredContributorData
+	if err, contributorData = getSubmittersPRfromGH(submittersName, submittersPRs, monthToSelectFrom); err != nil {
 		return err
 	}
 
-	// TODO: format the output with the gathered data
-	// TODO: output the file
+	// format the output with the gathered data
+	var honorCSVlist []string
+	workBuffer1 := generateHonoredContributorDataCSVheader()
+	workBuffer2 := fmt.Sprintf("\"%s\", ", getCurrentTimeAsTimeStamp("")) + generateHonoredContributorDataAsCSV(contributorData)
+	honorCSVlist = append(honorCSVlist, workBuffer1, workBuffer2)
+
+	// output the file
+
+	// Creates, overwrites the output file (no append and with no header generation)
+	out, _ := openOutputCSV(honorOutputFileName, false, true)
+	defer out.Close()
+
+	writeCSVtoFile(out, false, true, "", honorCSVlist)
+	out.Close()
 
 	return nil
 }
@@ -227,7 +241,7 @@ func addUniqueItem(s string) {
 //******************************
 
 // Gets all the PRs in the given month for the submitters
-func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToSelectFrom string) error {
+func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToSelectFrom string) (error, HonoredContributorData) {
 
 	// Setup the GH query client
 	ghToken := loadGitHubToken(ghTokenVar)
@@ -256,7 +270,7 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 		"submitter": githubv4.String(submittersName),
 	}
 	if err := client.Query(context.Background(), &userQuery, userVariables); err != nil {
-		return fmt.Errorf("Error performing user query: %v\n", err)
+		return fmt.Errorf("Error performing user query: %v\n", err), contributorData
 	}
 
 	// Load the data form the returned json file
@@ -307,22 +321,24 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 	}
 
 	if err := client.Query(context.Background(), &prQuery3, variables); err != nil {
-		return fmt.Errorf("Error performing PR query: %v\n", err)
+		return fmt.Errorf("Error performing PR query: %v\n", err), contributorData
 	}
 
 	totalPRs := prQuery3.Search.IssueCount
 	contributorData.totalPRs_found = strconv.Itoa(totalPRs)
 	if contributorData.totalPRs_expected != contributorData.totalPRs_found {
-		return fmt.Errorf("Expected PR number does not match query's PR number. (%s vs. %s)", contributorData.totalPRs_expected, contributorData.totalPRs_found)
+		return fmt.Errorf("Expected PR number does not match query's PR number. (%s vs. %s)", contributorData.totalPRs_expected, contributorData.totalPRs_found), contributorData
 	}
 
 	for _, singlePr := range prQuery3.Search.Edges {
 		if singlePr.Node.PullRequest.Author.Login != submittersName {
-			return fmt.Errorf("Unexpected error: PR author does not match requested GH userName (%s vs. %s)", singlePr.Node.PullRequest.Author.Login, submittersName)
+			return fmt.Errorf("Unexpected error: PR author does not match requested GH userName (%s vs. %s)", singlePr.Node.PullRequest.Author.Login, submittersName), contributorData
 		}
 		repositoryName := singlePr.Node.PullRequest.Repository.Owner.Login + "/" + singlePr.Node.PullRequest.Repository.Name
 		addUniqueItem(repositoryName)
 	}
+
+	// takes the slice and generates a string with items separated by spaces
 	contributorData.repositories = stringifySlice(uniqueRepoSlice)
 
 	if isVerbose {
@@ -330,9 +346,7 @@ func getSubmittersPRfromGH(submittersName string, submittersPRs string, monthToS
 		fmt.Println(prettyPrint_HonoredContributorData(contributorData))
 	}
 
-	//TODO: return the data
-
-	return nil
+	return nil, contributorData
 }
 
 // Format the data in a displayable manner
@@ -362,4 +376,57 @@ func stringifySlice(s []string) string {
 		}
 	}
 	return buffer
+}
+
+// get the current time as a time stamp unless one is supplied (for testing and header generation purposes)
+func getCurrentTimeAsTimeStamp(suppliedTime string) string {
+	var outBuffer string
+	if suppliedTime == "" {
+		t := time.Now().UTC()
+		outBuffer = fmt.Sprintf("%sZ", t.Format("2006-01-02T15-04-05"))
+	} else {
+		outBuffer = suppliedTime
+	}
+
+	return outBuffer
+
+}
+
+// Generates the data part of the CSV (without time stamp).
+// Makes it easier to test and to use to generate header
+func generateHonoredContributorDataAsCSV(contributorData HonoredContributorData) string {
+
+	outBuffer := fmt.Sprintf("\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"",
+		contributorData.month,
+		contributorData.handle,
+		contributorData.fullName,
+		contributorData.authorCompany,
+		contributorData.authorURL,
+		contributorData.authorAvatarUrl,
+		contributorData.totalPRs_found,
+		contributorData.repositories,
+	)
+
+	return outBuffer
+}
+
+// Generates the data part of the CSV (without time stamp).
+// Makes it easier to test and to use to generate header
+func generateHonoredContributorDataCSVheader() string {
+	var headerData HonoredContributorData = HonoredContributorData{
+		handle:            "GH_HANDLE",
+		fullName:          "FULL_NAME",
+		authorURL:         "GH_HANDLE_URL",
+		authorAvatarUrl:   "GH_HANDLE_AVATAR",
+		authorCompany:     "COMPANY",
+		month:             "MONTH",
+		totalPRs_found:    "NBR_PR",
+		totalPRs_expected: "",
+		repositories:      "REPOSITORIES",
+	}
+
+	shortHeader := generateHonoredContributorDataAsCSV(headerData)
+	outBuffer := "\"RUN_DATE\", " + shortHeader
+
+	return outBuffer
 }
