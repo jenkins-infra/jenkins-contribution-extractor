@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -64,7 +65,7 @@ func Test_ExecuteIntegrationTest(t *testing.T) {
 
 	// Setup environment
 	tempDir := t.TempDir()
-	tempFileName, err := duplicateFile("../test-data/submissions-2023-08.csv", tempDir)
+	tempFileName, err := duplicateFile("../test-data/submissions-2023-08.csv", tempDir, true)
 
 	assert.NoError(t, err, "Unexpected File duplication error")
 	assert.NotEmpty(t, tempFileName, "Unexpected empty temporary filename")
@@ -312,7 +313,7 @@ func Test_isFileSpec(t *testing.T) {
 
 // duplicate test file as a temporary file.
 // The temporary directory should be created in the calling test so that it gets cleaned at test completion.
-func duplicateFile(originalFileName, targetDir string) (tempFileName string, err error) {
+func duplicateFile(originalFileName, targetDir string, generateFilename bool) (tempFileName string, err error) {
 
 	//Check the status and size of the original file
 	sourceFileStat, err := os.Stat(originalFileName)
@@ -331,12 +332,18 @@ func duplicateFile(originalFileName, targetDir string) (tempFileName string, err
 	}
 	defer source.Close()
 
-	// generate temporary file name in temp directory
+	// generate temporary file name in temp directory if requested
+	if generateFilename {
 	file, err := os.CreateTemp(targetDir, "testData.*.csv")
 	if err != nil {
 		return "", err
 	}
 	tempFileName = file.Name()
+} else {
+	//we want to keep the original filename
+	_, file := filepath.Split(originalFileName)
+	tempFileName = filepath.Join(targetDir,file)
+}
 
 	// create the new file duplication
 	destination, err := os.Create(tempFileName)

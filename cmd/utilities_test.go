@@ -673,3 +673,37 @@ func Test_prettyPrintStringList(t *testing.T) {
 		})
 	}
 }
+
+func Test_isValidDir(t *testing.T) {
+	type args struct {
+		dirName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"happy case",
+			args{dirName: "../Notes"},
+			true,
+		},
+		{
+			"non existent dir",
+			args{dirName: "../undefined"},
+			false,
+		},
+		{
+			"not a directory",
+			args{dirName: "../test-data/empty-submission-list.csv"},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isValidDir(tt.args.dirName); got != tt.want {
+				t.Errorf("isValidDir() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
