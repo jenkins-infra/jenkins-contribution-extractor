@@ -25,6 +25,7 @@ go.work
 
 #default test file
 jenkins_commenters_data.csv
+honored_contributor.csv
 
 #Goreleaser output directory
 dist/

@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"bytes"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -113,14 +114,23 @@ func Test_honorCommand_paramCheck_invalidMonth(t *testing.T) {
 	assert.ErrorContains(t, error, "\"junkMonth\" is not a valid month.", "Call should have failed with expected error.")
 }
 
-// FIXME: do this in a temporary directory
+
 func Test_honorCommand_integrationTest_verbose(t *testing.T) {
-	//Setup environment
+
+	// Setup test environment
+	tempDir := t.TempDir()
+	// duplicate the file but keep the original filename
+	dataFilename, err := duplicateFile("../test-data/pr_per_submitter-2024-04.csv", tempDir, false)
+
+	assert.NoError(t, err, "Unexpected data file duplication error")
+	assert.NotEmpty(t, dataFilename, "Failure to copy data file")
+
+
 	actual := new(bytes.Buffer)
 	rootCmd.SetOut(actual)
 	rootCmd.SetErr(actual)
 	var commandArguments []string
-	commandArguments = append(commandArguments, "honor", "2024-04", "--data_dir=../test-data", "--verbose")
+	commandArguments = append(commandArguments, "honor", "2024-04", "--data_dir="+tempDir, "--verbose")
 	rootCmd.SetArgs(commandArguments)
 
 	// execute command
@@ -128,6 +138,9 @@ func Test_honorCommand_integrationTest_verbose(t *testing.T) {
 
 	// check results
 	assert.NoError(t, error, "Call should not have failed")
+	assert.NotEmpty(t, filepath.Join(tempDir,"honored_contributor.csv"), "Failure to generate target file")
+	//TODO: check that it has the correct header 
+	//TODO: check that the data (second line) has usable data (is this worth it?)
 
 }
 
