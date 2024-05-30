@@ -84,7 +84,7 @@ func init() {
 	honorCmd.Flags().StringVarP(&honorOutput, "output", "", "", "File to output the data to (default: \"[data_dir]/honored_contributor.csv\")")
 }
 
-// Command processing entry point
+// Command processing entry point,
 func performHonorContributorSelection(dataDir string, suppliedOutputFileName string, monthToSelectFrom string) error {
 	// validate the month
 	if !isValidMonthFormat(monthToSelectFrom) {
