@@ -82,7 +82,7 @@ brews:
     # Defaults are shown.
     commit_author:
       name: goreleaserbot
-      email: jean-marc@meessen-web.org
+      email: jenkins-infra-team@googlegroups.com
 
     # The project name and current git tag are used in the format string.
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
