@@ -1,5 +1,5 @@
 builds:
-- binary: jenkins-stats
+- binary: jenkins-contribution-extractor
 
   goos:
     - linux
@@ -24,10 +24,10 @@ builds:
       goarch: arm
 
   ldflags:
-    - -s -w -X github.com/jmMeessen/jenkins-stats/cmd.version={{.Version}} 
-    - -s -w -X github.com/jmMeessen/jenkins-stats/cmd.commit={{.Commit}} 
-    - -s -w -X github.com/jmMeessen/jenkins-stats/cmd.date={{.Date}}
-    - -s -w -X github.com/jmMeessen/jenkins-stats/cmd.builtBy=goReleaser
+    - -s -w -X github.com/jenkins-infra/jenkins-contribution-extractor/cmd.version={{.Version}} 
+    - -s -w -X github.com/jenkins-infra/jenkins-contribution-extractor/cmd.commit={{.Commit}} 
+    - -s -w -X github.com/jenkins-infra/jenkins-contribution-extractor/cmd.date={{.Date}}
+    - -s -w -X github.com/jenkins-infra/jenkins-contribution-extractor/cmd.builtBy=goReleaser
 
 # See Goreleaser documentation at https://goreleaser.com/customization/homebrew/ for
 # more details.
@@ -35,7 +35,7 @@ brews:
   -
     # Name template of the recipe
     # Default to project name
-    name: jenkins-stats
+    name: jenkins-contribution-extractor
 
     # # IDs of the archives to use.
     # # Defaults to all.
@@ -53,7 +53,7 @@ brews:
 
     # GitHub/GitLab repository to push the formula to
     repository:
-      owner: jmMeessen
+      owner: jenkins-infra
       name: homebrew-tap
       # Optionally a branch can be provided. If the branch does not exist, it
       # will be created. If no branch is listed, the default branch will be used
@@ -66,7 +66,7 @@ brews:
     # Default for github is "https://github.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     # Default for gitlab is "https://gitlab.com/<repo_owner>/<repo_name>/-/releases/{{ .Tag }}/downloads/{{ .ArtifactName }}"
     # Default for gitea is "https://gitea.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    url_template: "https://github.com/jmMeessen/jenkins-stats/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/jenkins-infra/jenkins-contribution-extractor/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     # Allows you to set a custom download strategy. Note that you'll need
     # to implement the strategy and add it to your tap repository.
@@ -82,7 +82,7 @@ brews:
     # Defaults are shown.
     commit_author:
       name: goreleaserbot
-      email: jean-marc@meessen-web.org
+      email: jenkins-infra-team@googlegroups.com
 
     # The project name and current git tag are used in the format string.
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
@@ -97,11 +97,11 @@ brews:
 
     # # Your app's homepage.
     # # Default is empty.
-    homepage: "https://github.com/jmMeessen/jenkins-stats"
+    homepage: "https://github.com/jenkins-infra/jenkins-contribution-extractor"
 
     # Template of your app's description.
     # Default is empty.
-    description: "Jenkins Submitter Pivot Table analyzer."
+    description: "Jenkins Contribution data extractor and analyzer."
 
     # SPDX identifier of your app's license.
     # Default is empty.
@@ -119,4 +119,4 @@ brews:
     # So you can `brew test` your formula.
     # Default is empty.
     test: |
-      system "#{bin}/jenkins-stats version -d"
+      system "#{bin}/jenkins-contribution-extractor version -d"

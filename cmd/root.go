@@ -43,7 +43,7 @@ var excludedGithubUsers []string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	// Use:   "jenkins-stats [PR list CSV]",
+	// Use:   "jenkins-contribution-extractor [PR list CSV]",
 	Short: "Retrieve Jenkins related usage stats from GitHub",
 	Long: `Retrieve data from GitHub that can be useful to evaluate the health and activity of a community.
 It currently gets data about Pull Request submitters and commenters on those Pull Requests.

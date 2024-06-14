@@ -21,7 +21,7 @@
 
 ## New interface
 
-### **`jenkins-stats`**
+### **`jenkins-contribution-extractor`**
 - **root** (displays help)
     - **version**
         - -d : detailed

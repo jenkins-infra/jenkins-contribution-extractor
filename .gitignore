@@ -31,7 +31,7 @@ honored_contributor.csv
 dist/
 
 #exclude temporary executables
-jenkins-stats
+jenkins-contribution-extractor
 
 #We don't want to keep debug traces
 debug.log

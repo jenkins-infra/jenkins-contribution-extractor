@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/jmMeessen/jenkins-stats/cmd"
+import "github.com/jenkins-infra/jenkins-contribution-extractor/cmd"
 
 func main() {
 	cmd.Execute()

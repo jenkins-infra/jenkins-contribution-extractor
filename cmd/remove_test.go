@@ -334,16 +334,16 @@ func duplicateFile(originalFileName, targetDir string, generateFilename bool) (t
 
 	// generate temporary file name in temp directory if requested
 	if generateFilename {
-	file, err := os.CreateTemp(targetDir, "testData.*.csv")
-	if err != nil {
-		return "", err
+		file, err := os.CreateTemp(targetDir, "testData.*.csv")
+		if err != nil {
+			return "", err
+		}
+		tempFileName = file.Name()
+	} else {
+		//we want to keep the original filename
+		_, file := filepath.Split(originalFileName)
+		tempFileName = filepath.Join(targetDir, file)
 	}
-	tempFileName = file.Name()
-} else {
-	//we want to keep the original filename
-	_, file := filepath.Split(originalFileName)
-	tempFileName = filepath.Join(targetDir,file)
-}
 
 	// create the new file duplication
 	destination, err := os.Create(tempFileName)
