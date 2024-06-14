@@ -1,4 +1,4 @@
-module github.com/jmMeessen/jenkins-stats
+module github.com/jenkins-infra/jenkins-contribution-extractor
 
 go 1.21.1
 

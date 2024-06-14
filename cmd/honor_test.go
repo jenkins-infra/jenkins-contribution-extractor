@@ -114,7 +114,6 @@ func Test_honorCommand_paramCheck_invalidMonth(t *testing.T) {
 	assert.ErrorContains(t, error, "\"junkMonth\" is not a valid month.", "Call should have failed with expected error.")
 }
 
-
 func Test_honorCommand_integrationTest_verbose(t *testing.T) {
 
 	// Setup test environment
@@ -124,7 +123,6 @@ func Test_honorCommand_integrationTest_verbose(t *testing.T) {
 
 	assert.NoError(t, err, "Unexpected data file duplication error")
 	assert.NotEmpty(t, dataFilename, "Failure to copy data file")
-
 
 	actual := new(bytes.Buffer)
 	rootCmd.SetOut(actual)
@@ -138,8 +136,8 @@ func Test_honorCommand_integrationTest_verbose(t *testing.T) {
 
 	// check results
 	assert.NoError(t, error, "Call should not have failed")
-	assert.NotEmpty(t, filepath.Join(tempDir,"honored_contributor.csv"), "Failure to generate target file")
-	//TODO: check that it has the correct header 
+	assert.NotEmpty(t, filepath.Join(tempDir, "honored_contributor.csv"), "Failure to generate target file")
+	//TODO: check that it has the correct header
 	//TODO: check that the data (second line) has usable data (is this worth it?)
 
 }
