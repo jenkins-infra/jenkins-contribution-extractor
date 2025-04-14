@@ -1,6 +1,7 @@
 module github.com/jenkins-infra/jenkins-contribution-extractor
 
-go 1.23
+go 1.23.0
+
 toolchain go1.24.1
 
 require golang.org/x/oauth2 v0.24.0
