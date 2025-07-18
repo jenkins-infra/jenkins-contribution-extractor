@@ -4,7 +4,7 @@ go 1.23.0
 
 toolchain go1.24.1
 
-require golang.org/x/oauth2 v0.24.0
+require golang.org/x/oauth2 v0.27.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
