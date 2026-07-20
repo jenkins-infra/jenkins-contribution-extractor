@@ -13,7 +13,7 @@ require (
 
 require (
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
-	github.com/cloudflare/circl v1.6.1 // indirect
+	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/google/go-github/v55 v55.0.0
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
